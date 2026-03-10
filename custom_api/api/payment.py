@@ -288,6 +288,10 @@ def get_all_payments():
                 filters["payment_type"] = "Pay"
 
         # Party filter (Customer or Supplier)
+        party_type = args.get("partyType")
+        if party_type:
+            filters["party_type"] = party_type
+
         party_id = args.get("CustomerId")
         party_type = args.get("partyType")  # "Customer" or "Supplier"
         if party_id and party_type:
