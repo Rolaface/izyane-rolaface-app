@@ -1,4 +1,6 @@
+from erpnext.accounts.utils import get_balance_on
 import frappe
+from frappe.utils import flt
 from custom_api.utils.response import send_response
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
@@ -76,11 +78,15 @@ def get_chart_of_accounts():
             }
 
         # ── Attach balance and currency to each account ────────────────────
+        company_currency = frappe.get_cached_value("Company", company, "default_currency")
+
         for acc in accounts:
             balance_data = balance_map.get(acc["name"])
             if balance_data:
                 raw_balance = balance_data["balance"]
                 acc["account_currency"] = balance_data["account_currency"]
+                if acc["account_currency"] and acc["account_currency"] != company_currency:
+                    acc["balance_in_account_currency"] = flt(get_balance_on(acc["name"], company=company))
 
                 # ── For liability/equity/income: credit is positive ────────
                 if acc.get("root_type") in ("Liability", "Equity", "Income"):
