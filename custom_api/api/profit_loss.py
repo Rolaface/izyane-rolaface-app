@@ -15,10 +15,6 @@ def _detect_period_keys(columns):
         if col.get("fieldname") and col.get("fieldname") not in meta_fields
     ]
 
-def _build_period_labels(columns, period_keys):
-    col_map = {col.get("fieldname"): col.get("label", "") for col in (columns or [])}
-    return {key: col_map.get(key, key) for key in period_keys}
-
 def _build_tree(raw_data, period_keys):
     row_map = {}
     roots = {"income": [], "expense": []}
@@ -80,22 +76,12 @@ def get_profit_and_loss():
     columns, data, message, chart, report_summary, primitive_summary = execute(filters)
 
     period_keys = _detect_period_keys(columns)
-    period_labels = _build_period_labels(columns, period_keys)
     tree = _build_tree(data, period_keys) if period_keys else {"income": [], "expense": []}
 
     return send_response(
         status="success",
         message="Profit and Loss fetched successfully.",
         data={
-            "meta": {
-                "company": company,
-                "from_fiscal_year": from_fiscal_year,
-                "to_fiscal_year": to_fiscal_year,
-                "periodicity": periodicity,
-                "currency": "INR",
-                "period_keys": period_keys,
-                "period_labels": period_labels,
-            },
             "summary": report_summary,
             "income": tree["income"],
             "expense": tree["expense"],
