@@ -2,7 +2,7 @@ import frappe
 from frappe.desk.query_report import run
 from custom_api.utils.response import send_response
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_trial_balance():
     company = frappe.defaults.get_user_default("Company")
 
