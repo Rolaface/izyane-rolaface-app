@@ -2,7 +2,7 @@ import frappe
 from frappe.desk.doctype.bulk_update.bulk_update import _bulk_action
 from custom_api.utils.response import send_response
 
-@frappe.whitelist(allow_guest=False, methods=["POST"] )
+@frappe.whitelist(allow_guest=False, methods=["PATCH"] )
 def update_purchase_order_status():
     data = frappe.request.get_json()
     poId = data["id"]
