@@ -1,6 +1,6 @@
 import frappe
 from frappe.desk.doctype.bulk_update.bulk_update import _bulk_action
-from custom_api.utils.response import send_response
+from erpnext.zra_client.generic_api import send_response
 
 @frappe.whitelist(allow_guest=False, methods=["PATCH"] )
 def update_purchase_order_status():
@@ -37,11 +37,11 @@ def update_purchase_order_status():
         if isinstance(docnames, str):
             docnames = frappe.parse_json(docnames)
         if status =="Approved":
-            status = "submit"
+            frape_status = "submit"
         if status == "Cancelled":
-            status = "cancel"
+            frape_status = "cancel"
 
-        response = _bulk_action("Purchase Order", docnames, status, data=None, task_id=None)
+        response = _bulk_action("Purchase Order", docnames, frape_status, data=None, task_id=None)
         return send_response(
             status="success",
             message="Purchase Order status updated successfully",
