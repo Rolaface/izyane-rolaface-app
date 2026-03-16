@@ -1,3 +1,4 @@
+from custom_api.helper import STATUS_MAP
 import frappe
 from frappe.desk.doctype.bulk_update.bulk_update import _bulk_action
 from erpnext.zra_client.generic_api import send_response
@@ -8,6 +9,7 @@ def update_purchase_order_status():
     poId = data["id"]
     status = data["status"]
     docnames = [poId]
+    config = STATUS_MAP.get(status)
     if not poId:
         return send_response(
                status="fail",
@@ -16,7 +18,7 @@ def update_purchase_order_status():
                status_code=400,
                http_status=400,
                )
-    if not status:
+    if not config:
         return send_response(
             status="fail",
             message="'status' parameter is required.",
@@ -32,16 +34,13 @@ def update_purchase_order_status():
             status_code=404,
             http_status=404,
         )
-
-    if status not in ["Completed"]:
+    
+    action = config["action"]
+    if action:
         if isinstance(docnames, str):
             docnames = frappe.parse_json(docnames)
-        if status =="Approved":
-            frape_status = "submit"
-        if status == "Cancelled":
-            frape_status = "cancel"
 
-        response = _bulk_action("Purchase Order", docnames, frape_status, data=None, task_id=None)
+        response = _bulk_action("Purchase Order", docnames, action, data=None, task_id=None)
         return send_response(
             status="success",
             message="Purchase Order status updated successfully",
