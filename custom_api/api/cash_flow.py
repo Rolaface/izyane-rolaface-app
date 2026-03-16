@@ -3,6 +3,28 @@ import frappe
 from erpnext.accounts.report.cash_flow.cash_flow import execute
 from custom_api.utils.response import send_response
 
+def get_summary_with_colors(report_summary):
+    colored_summary = []
+    for item in report_summary:
+        value = item.get("value", 0)
+
+        if value > 0:
+            color = "green"
+        elif value < 0:
+            color = "red"
+        else:
+            color = "gray"
+
+        colored_summary.append({
+            "label": item.get("label"),
+            "value": value,
+            "datatype": item.get("datatype"),
+            "currency": item.get("currency"),
+            "color": color
+        })
+
+    return colored_summary
+
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_cash_flow():
     company = frappe.defaults.get_user_default("Company")
@@ -31,7 +53,7 @@ def get_cash_flow():
         message="Profit and Loss fetched successfully.",
         data={
             "columns": columns,
-            "summary": report_summary,
+            "summary": get_summary_with_colors(report_summary),
             "data": data
         },
         status_code=200,
