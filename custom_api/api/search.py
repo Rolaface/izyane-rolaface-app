@@ -3,24 +3,24 @@ import frappe
 from custom_api.utils.response import send_response
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
-def get_company_accounts():
+def get_company_ledger_accounts():
     try:
         txt = frappe.request.args.get("search", "")
         company = frappe.defaults.get_user_default("Company")
         filters = frappe._dict(
-            {"company": company, "account_type": "Bank", "is_group": 0}
+            {"company": company, "is_group": 0}
         )
-        results = search_widget(
+        response = search_widget(
             "Account",
             txt.strip(),
             None,
             searchfield=None,
             page_length=10,
             filters=filters,
-            reference_doctype="Bank Account",
-            ignore_user_permissions=0,
+            reference_doctype="Account",
+            as_dict = True,
+            ignore_user_permissions=1,
         )
-        response = build_for_autosuggest(results, doctype="Bank")
         return send_response(
             status="success",
             message="Company Accounts fetched successfully.",
