@@ -14,6 +14,7 @@ def get_bank_accounts():
             searchfield=None,
             page_length=10,
             filters=None,
+            filter_fields='["swift_number"]',
             reference_doctype="Bank Account",
             ignore_user_permissions=0,
         )
