@@ -233,3 +233,41 @@ def get_suppliers():
         return send_response(
             status="fail", message=str(e), data=None, status_code=500, http_status=500
         )
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_bank_company_supplier_cutomer():
+    try:
+        txt = frappe.request.args.get("search", "")
+        account_for = frappe.request.args.get("accountFor","")
+        if account_for == "Company":
+            response = frappe.defaults.get_user_default("Company")
+        else:
+            filter_fields = None
+            if account_for == "Supplier":
+                filter_fields = '["default_currency"]'
+            response = search_widget(
+                account_for,
+                txt.strip(),
+                None,
+                searchfield=None,
+                page_length=10,
+                filters=None,
+                filter_fields=filter_fields,
+                reference_doctype="Bank Account",
+                ignore_user_permissions=0,
+                as_dict= True,
+
+            )
+        
+        return send_response(
+            status="success",
+            message="Suppliers fetched successfully.",
+            data={"data": response},
+            status_code=200,
+            http_status=200,
+        )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
+        return send_response(
+            status="fail", message=str(e), data=None, status_code=500, http_status=500
+        )
