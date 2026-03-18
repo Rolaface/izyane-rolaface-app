@@ -6,9 +6,8 @@ from custom_api.utils.response import send_response
 def get_company_ledger_accounts():
     try:
         txt = frappe.request.args.get("search", "")
-        company = frappe.defaults.get_user_default("Company")
         filters = frappe._dict(
-            {"company": company, "is_group": 0}
+            {"is_group": 1}
         )
         response = search_widget(
             "Account",
