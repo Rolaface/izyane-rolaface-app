@@ -54,7 +54,7 @@ def create():
                                 "parent_account": reporting_account
                             })
             ledger_account.insert(ignore_permissions=True)
-            frappe.db.commit()
+            # frappe.db.commit()
 
         bank_account = frappe.get_doc({
             "doctype": "Bank Account",
@@ -70,7 +70,7 @@ def create():
             "last_integration_date": last_integration_date,
             "account": ledger_account.name if accountFor == "Company" else None,
             "party_type": accountFor if accountFor != "Company" else None,
-            "party": party,
+            "party": party if accountFor != "Company" else None,
             "is_default": isDefault,
             "disabled": isDisabled
         })
