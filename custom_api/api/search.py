@@ -209,7 +209,7 @@ def get_bank_company_supplier_cutomer():
         txt = frappe.request.args.get("search", "")
         doc_filter = frappe.request.args.get("filter","")
 
-        if doc_filter not in ["Company", "Supplier", "Bank", "Customer"]:
+        if doc_filter not in ["Company", "Supplier", "Bank", "Customer", "Currency"]:
             return send_response(
                 status="fail",
                 message="Invalid Filter.",
