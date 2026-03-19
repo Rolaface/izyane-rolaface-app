@@ -3,38 +3,6 @@ import frappe
 from custom_api.utils.response import send_response
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
-def get_company_ledger_accounts():
-    try:
-        txt = frappe.request.args.get("search", "")
-        filters = frappe._dict(
-            {"is_group": 1}
-        )
-        response = search_widget(
-            "Account",
-            txt.strip(),
-            None,
-            searchfield=None,
-            page_length=10,
-            filters=filters,
-            reference_doctype="Account",
-            as_dict = True,
-            ignore_user_permissions=1,
-        )
-        return send_response(
-            status="success",
-            message="Company Accounts fetched successfully.",
-            data={"data": response},
-            status_code=200,
-            http_status=200,
-        )
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Make Payment API Error")
-        return send_response(
-            status="fail", message=str(e), data=None, status_code=500, http_status=500
-        )
-
-
-@frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_payable_accounts():
     try:
         txt = frappe.request.args.get("search", "")
