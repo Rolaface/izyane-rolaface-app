@@ -217,7 +217,10 @@ def get_bank_company_supplier_cutomer():
             )
 
         if doc_filter == "Company":
-            response = frappe.defaults.get_user_default("Company")
+            company = frappe.defaults.get_user_default("Company")
+            currency = frappe.db.get_value("Company", company, "default_currency")
+            response = {"company": company, "currency":currency}
+            
         else:
             filter_fields = None
             if doc_filter == "Supplier":
