@@ -1,5 +1,6 @@
 import frappe
 from custom_api.utils.response import send_response
+from frappe.utils import ceil
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
 def create():
@@ -99,10 +100,12 @@ def get():
     party      = frappe.request.args.get("party")
     bank       = frappe.request.args.get("bank")
     disabled   = frappe.request.args.get("disabled")
-    company_name = frappe.defaults.get_user_default("Company") if company else None
+    page       = int(frappe.request.args.get("page", 1))
+    page_size  = int(frappe.request.args.get("page_size", 10))
+    
     filters = {}
-    if company_name:
-        filters = {"company": company_name}
+    if company:
+        filters = {"company": frappe.defaults.get_user_default("Company")}
     if party_type:
         filters["party_type"] = party_type
     if party:
@@ -112,24 +115,58 @@ def get():
     if disabled is not None:
         filters["disabled"] = int(disabled)
 
+    fields = [
+        "name", "account_name as accountHolderName", "bank as bankName", "bank_account_no as accountNo",
+        "branch_code as sortCode", "branch_address as branchAddress", "iban",
+        "is_company_account", "is_default as isDefault", "disabled as isDisabled",
+        "party_type as accountFor", "party as partyName", "company",
+        "last_integration_date as dateAdded", "account as ledgerAccount"
+    ]
+
+    total = frappe.db.count("Bank Account", filters=filters)
     bank_accounts = frappe.db.get_all(
         "Bank Account",
         filters=filters,
-        fields=[
-            "name", "account_name as accountHolderName", "bank as bankName", "bank_account_no as accountNo",
-            "branch_code as sortCode", "branch_address as branchAddress", "iban",
-            "is_company_account", "is_default as isDefaulr", "disabled as isDisabled",
-            "party_type as accountFor", "party as partyName", "company", "last_integration_date as dateAdded"
-        ],
+        fields=fields,
         order_by="creation desc",
+        limit=page_size,
+        limit_start=(page - 1) * page_size,
     )
+
+    # For company accounts, fetch currency from tabAccount via the linked account field
+    account_names = [
+        ba.get("ledgerAccount") for ba in bank_accounts
+        if ba.get("is_company_account") and ba.get("ledgerAccount")
+    ]
+
+    currency_map = {}
+    if account_names:
+        account_records = frappe.db.get_all(
+            "Account",
+            filters={"name": ["in", account_names]},
+            fields=["name", "account_currency as currency"]
+        )
+        currency_map = {a["name"]: a["currency"] for a in account_records}
+
+    for ba in bank_accounts:
+        if ba.get("is_company_account"):
+            ba["currency"] = currency_map.get(ba.get("ledgerAccount"))
+        else:
+            ba["currency"] = None
 
     return send_response(
         status="success",
         message="Bank Accounts fetched successfully.",
         data={
             "bank_accounts": bank_accounts,
-            "total": len(bank_accounts)
+            "pagination": {
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": ceil(total / page_size),
+                "has_next": page * page_size < total,
+                "has_prev": page > 1,
+            }
         },
         status_code=200,
         http_status=200,
