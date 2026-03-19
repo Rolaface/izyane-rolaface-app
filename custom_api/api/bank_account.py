@@ -21,7 +21,7 @@ def create():
     isDisabled = data.get("isDisabled",0)
 
     is_company_account = 1 if accountFor == "Company" else 0
-    company =  frappe.defaults.get_user_default("Company") if accountFor == "Compnay" else None
+    company =  frappe.defaults.get_user_default("Company") if accountFor == "Company" else None
     if not accountFor:
         return send_response(status="fail", message=" is required.", data=None, status_code=400, http_status=400)
 
@@ -62,7 +62,7 @@ def create():
             "account_name": account_holder_name,
             "bank": bank,
             "bank_account_no": account_number,
-            "company": company if accountFor == "Company" else None,
+            "company": company,
             "currency": currency,
             "branch_code": branch_code,
             "iban": iban,
