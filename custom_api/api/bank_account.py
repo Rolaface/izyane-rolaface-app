@@ -1,5 +1,6 @@
 import frappe
 from custom_api.utils.response import send_response
+from erpnext.zra_client.generic_api import send_response as old_response
 from frappe.utils import ceil
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
@@ -23,27 +24,26 @@ def create():
     is_company_account = 1 if accountFor == "Company" else 0
     company =  frappe.defaults.get_user_default("Company") if accountFor == "Company" else None
     if not accountFor:
-        return send_response(status="fail", message=" is required.", data=None, status_code=400, http_status=400)
+        return old_response(status="fail", message=" is required.", data=None, status_code=400, http_status=400)
 
     if not bank:
-        return send_response(status="fail", message="'bank' is required.", data=None, status_code=400, http_status=400)
+        return old_response(status="fail", message="'bank' is required.", data=None, status_code=400, http_status=400)
     if not account_number:
-        return send_response(status="fail", message="'account_number' is required.", data=None, status_code=400, http_status=400)
+        return old_response(status="fail", message="'account_number' is required.", data=None, status_code=400, http_status=400)
 
     if not frappe.db.exists("Bank", bank):
-        return send_response(status="fail", message=f"Bank '{bank}' does not exist.", data=None, status_code=404, http_status=404)
+        return old_response(status="fail", message=f"Bank '{bank}' does not exist.", data=None, status_code=404, http_status=404)
 
     if frappe.db.exists("Bank Account", {"bank_account_no": account_number}):
-        return send_response(status="fail", message=f"Bank Account with number '{account_number}' already exists.", data=None, status_code=409, http_status=409)
+        return old_response(status="fail", message=f"Bank Account with number '{account_number}' already exists.", data=None, status_code=409, http_status=409)
 
     if accountFor != "Company" and party == None:
-        return send_response(status="fail", message="Party Name is required.", data=None, status_code=400, http_status=400)
+        return old_response(status="fail", message="Party Name is required.", data=None, status_code=400, http_status=400)
     
     if reporting_account and frappe.db.exists("Bank Account", {"account": reporting_account}):
-        return send_response(status="fail", message=f" {reporting_account} reporting account is already use another account.", 
+        
+        return old_response(status="fail", message=f" {reporting_account} reporting account is already use another account.", 
                             data=None, status_code=400, http_status=400)
-
-
     try:
         bank_account = frappe.get_doc({
             "doctype": "Bank Account",
@@ -68,7 +68,7 @@ def create():
         bank_account.insert(ignore_permissions=True)
         frappe.db.commit()
 
-        return send_response(
+        return old_response(
             status="success",
             message="Bank Account created successfully.",
             data={"bank_account_id": bank_account.name},
@@ -187,7 +187,7 @@ def set_bank_account_status():
     frappe.db.set_value("Bank Account", bank_account_id, updates)
     frappe.db.commit()
 
-    return send_response(
+    return old_response(
         status="success",
         message="Bank Account updated successfully.",
         status_code=200,
