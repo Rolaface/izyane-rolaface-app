@@ -142,8 +142,6 @@ def get():
     for ba in bank_accounts:
         if ba.get("is_company_account"):
             ba["currency"] = currency_map.get(ba.get("ledgerAccount"))
-        else:
-            ba["currency"] = None
 
     return send_response(
         status="success",
