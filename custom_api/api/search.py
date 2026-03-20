@@ -252,7 +252,7 @@ def get_party_details(party_type, party, cost_center=None):
             status="success",
             message="Bank Account created successfully.",
             data={
-                    "party_account": party_account,
+                    "party_ledger_account": party_account,
                     "party_name": party_name,
                     "party_account_currency": account_currency,
                     "party_bank_account": party_bank_account,
