@@ -69,7 +69,7 @@ def get():
     name         = frappe.request.args.get("name")
     search       = frappe.request.args.get("search")
     page         = int(frappe.request.args.get("page", 1))
-    page_size    = int(frappe.request.args.get("page_size", 2))
+    page_size    = int(frappe.request.args.get("page_size", 10))
 
     filters = []
     if payment_type:
