@@ -1,6 +1,10 @@
+from erpnext.accounts.doctype.account.account import get_account_currency
+from erpnext.accounts.doctype.bank_account.bank_account import get_default_company_bank_account, get_party_bank_account
+from erpnext.accounts.party import get_party_account
 from frappe.desk.search import build_for_autosuggest, search_widget
 import frappe
 from custom_api.utils.response import send_response
+from erpnext.zra_client.generic_api import send_response as old_response
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_payable_accounts():
@@ -224,4 +228,36 @@ def get_bank_company_supplier_cutomer():
         frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
         return send_response(
             status="fail", message=str(e), data=None, status_code=500, http_status=500
+        )
+
+# Below is the custome API of "payment_entry.payment_entry.get_party_details"
+@frappe.whitelist(allow_guest=False, methods=["POST"])
+def get_party_details(party_type, party, cost_center=None):
+    bank_account = ""
+    party_bank_account = ""
+    company = frappe.defaults.get_user_default("Company")
+    
+    if not frappe.db.exists(party_type, party):
+        return old_response(status="fail", message=f"Party {party} does not exist", data=None, status_code=400, http_status=400)
+
+    party_account = get_party_account(party_type, party, company)
+    account_currency = get_account_currency(party_account)
+    _party_name = "title" if party_type == "Shareholder" else party_type.lower() + "_name"
+    party_name = frappe.db.get_value(party_type, party, _party_name)
+    if party_type in ["Customer", "Supplier"]:
+        party_bank_account = get_party_bank_account(party_type, party)
+        bank_account = get_default_company_bank_account(company, party_type, party)
+        
+    return old_response(
+            status="success",
+            message="Bank Account created successfully.",
+            data={
+                    "party_account": party_account,
+                    "party_name": party_name,
+                    "party_account_currency": account_currency,
+                    "party_bank_account": party_bank_account,
+                    "company_bank_account": bank_account,
+                },
+            status_code=201,
+            http_status=201,
         )
