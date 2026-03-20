@@ -241,7 +241,7 @@ def parties_and_accounts():
 # Below is the custome API of "payment_entry.payment_entry.get_party_details"
 @frappe.whitelist(allow_guest=False, methods=["POST"])
 def get_party_details(party_type, party, cost_center=None):
-    bank_account = ""
+    company_default_bank_account = ""
     party_bank_account = ""
     company = frappe.defaults.get_user_default("Company")
     
@@ -254,8 +254,10 @@ def get_party_details(party_type, party, cost_center=None):
     party_name = frappe.db.get_value(party_type, party, _party_name)
     if party_type in ["Customer", "Supplier"]:
         party_bank_account = get_party_bank_account(party_type, party)
-        bank_account = get_default_company_bank_account(company, party_type, party)
-        
+        company_default_bank_account = get_default_company_bank_account(company, party_type, party)
+        bank_account_ledger = frappe.get_cached_value("Bank Account", company_default_bank_account, ["account", "bank", "bank_account_no"], as_dict=1)
+        bank_account_ledger["currency"] = frappe.db.get_value("Account", bank_account_ledger["account"], "account_currency") if bank_account_ledger["account"] else None
+
     return old_response(
             status="success",
             message="Bank Account created successfully.",
@@ -264,7 +266,8 @@ def get_party_details(party_type, party, cost_center=None):
                     "party_name": party_name,
                     "party_account_currency": account_currency,
                     "party_bank_account": party_bank_account,
-                    "company_bank_account": bank_account,
+                    "company_bank_account": company_default_bank_account,
+                    "company_account_ledger": bank_account_ledger
                 },
             status_code=201,
             http_status=201,
