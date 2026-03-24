@@ -2,6 +2,57 @@ from erpnext.zra_client.generic_api import send_response_list
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from custom_api.utils.response import send_response
+from frappe.desk.search import search_widget
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_ledger_account():
+    try:
+        payment_type = frappe.request.args.get("paymentType", "Pay")
+        filter = frappe.request.args.get("filter", "to")
+        txt = frappe.request.args.get("search","")
+        company = frappe.defaults.get_user_default("Company")
+
+        from_filters = {"account_type":["in",["Bank","Cash"]],"is_group":0,"company":f"{company}"}
+        to_filters = {"account_type":["in",["Payable"]],"is_group":0,"company":f"{company}"}
+
+        if payment_type == "Pay" and filter == "from":
+            filters = from_filters
+
+        if payment_type == "Pay" and filter == "to":
+            filters = to_filters
+
+        if payment_type == "Receive" and filter == "to":
+            filters = from_filters
+
+        if payment_type == "Receive" and filter == "from":
+            filters = to_filters
+
+        response = search_widget(
+                "Account",
+                txt.strip(),
+                None,
+                searchfield=None,
+                page_length=10,
+                filters=filters,
+                filter_fields='["account_currency"]',
+                reference_doctype="Payment Entry",
+                ignore_user_permissions=0,
+                as_dict= True,
+
+            )
+        return send_response(
+            status="success",
+            message="Suppliers fetched successfully.",
+            data={"data": response},
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
+        return send_response(
+            status="fail", message=str(e), data=None, status_code=500, http_status=500
+        )
 
 
 # ─────────────────────────────────────────
