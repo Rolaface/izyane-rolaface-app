@@ -264,7 +264,7 @@ def get_party_details(party_type, party, cost_center=None):
     company_account_ledger = company_account_ledger_currency = ""
 
     company = frappe.defaults.get_user_default("Company")
-
+    company_currency = frappe.defaults.get_user_default("Currency")
     if not frappe.db.exists(party_type, party):
         return old_response(
             status="fail",
@@ -310,6 +310,7 @@ def get_party_details(party_type, party, cost_center=None):
             "company_bank_account": company_default_bank_account,
             "company_account_ledger": company_account_ledger["account"],
             "company_account_ledger_currency": company_account_ledger_currency,
+            "company_default_currency": company_currency
         },
         status_code=201,
         http_status=201,
