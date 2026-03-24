@@ -44,7 +44,7 @@ def get_ledger_account():
         return old_response(
             status="success",
             message="Suppliers fetched successfully.",
-            data={"data": response},
+            data= response,
             status_code=200,
             http_status=200,
         )
