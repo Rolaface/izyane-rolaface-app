@@ -3,6 +3,7 @@ import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from custom_api.utils.response import send_response
 from frappe.desk.search import search_widget
+from erpnext.zra_client.generic_api import send_response as old_response
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_ledger_account():
@@ -40,7 +41,7 @@ def get_ledger_account():
                 as_dict= True,
 
             )
-        return send_response(
+        return old_response(
             status="success",
             message="Suppliers fetched successfully.",
             data={"data": response},
@@ -50,7 +51,7 @@ def get_ledger_account():
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
-        return send_response(
+        return old_response(
             status="fail", message=str(e), data=None, status_code=500, http_status=500
         )
 
