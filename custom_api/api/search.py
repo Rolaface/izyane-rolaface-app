@@ -1,10 +1,14 @@
 from erpnext.accounts.doctype.account.account import get_account_currency
-from erpnext.accounts.doctype.bank_account.bank_account import get_default_company_bank_account, get_party_bank_account
+from erpnext.accounts.doctype.bank_account.bank_account import (
+    get_default_company_bank_account,
+    get_party_bank_account,
+)
 from erpnext.accounts.party import get_party_account
 from frappe.desk.search import build_for_autosuggest, search_widget
 import frappe
 from custom_api.utils.response import send_response
 from erpnext.zra_client.generic_api import send_response as old_response
+
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_payable_accounts():
@@ -174,12 +178,15 @@ def get_suppliers():
             status="fail", message=str(e), data=None, status_code=500, http_status=500
         )
 
+
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def parties_and_accounts():
     try:
         txt = frappe.request.args.get("search", "")
-        doc_filter = frappe.request.args.get("filter","")
-        reference_doctype = frappe.request.args.get("reference_doctype", "Bank Account") # We have made Bank Account as default because API was initially develop for referebce doctye = Bank Account and because of so much update in the front-end we have make it default
+        doc_filter = frappe.request.args.get("filter", "")
+        reference_doctype = frappe.request.args.get(
+            "reference_doctype", "Bank Account"
+        )  # We have made Bank Account as default because API was initially develop for referebce doctye = Bank Account and because of so much update in the front-end we have make it default
         company = frappe.defaults.get_user_default("Company")
         filters = None
 
@@ -190,7 +197,16 @@ def parties_and_accounts():
                 status_code=400,
                 http_status=400,
             )
-        if doc_filter not in ["Company", "Supplier", "Bank", "Customer", "Currency", "Account", "Shareholder", "Employee"]:
+        if doc_filter not in [
+            "Company",
+            "Supplier",
+            "Bank",
+            "Customer",
+            "Currency",
+            "Account",
+            "Shareholder",
+            "Employee",
+        ]:
             return send_response(
                 status="fail",
                 message="Invalid Filter.",
@@ -200,7 +216,7 @@ def parties_and_accounts():
 
         if doc_filter == "Company":
             currency = frappe.db.get_value("Company", company, "default_currency")
-            response = {"company": company, "currency":currency}
+            response = {"company": company, "currency": currency}
         else:
             filter_fields = None
             if doc_filter in ["Supplier", "Customer"]:
@@ -209,7 +225,9 @@ def parties_and_accounts():
                 filter_fields = '["swift_number"]'
 
             if doc_filter == "Account":
-                filters = frappe._dict({"account_type": "Bank", "company": company, "is_group":0})
+                filters = frappe._dict(
+                    {"account_type": "Bank", "company": company, "is_group": 0}
+                )
 
             response = search_widget(
                 doc_filter,
@@ -221,10 +239,9 @@ def parties_and_accounts():
                 filter_fields=filter_fields,
                 reference_doctype=reference_doctype,
                 ignore_user_permissions=0,
-                as_dict= True,
-
+                as_dict=True,
             )
-        
+
         return send_response(
             status="success",
             message="Suppliers fetched successfully.",
@@ -238,40 +255,141 @@ def parties_and_accounts():
             status="fail", message=str(e), data=None, status_code=500, http_status=500
         )
 
+
 # Below is the custome API of "payment_entry.payment_entry.get_party_details"
 @frappe.whitelist(allow_guest=False, methods=["POST"])
 def get_party_details(party_type, party, cost_center=None):
     company_default_bank_account = ""
     party_bank_account = ""
     company_account_ledger = company_account_ledger_currency = ""
-    
+
     company = frappe.defaults.get_user_default("Company")
-    
+
     if not frappe.db.exists(party_type, party):
-        return old_response(status="fail", message=f"Party {party} does not exist", data=None, status_code=400, http_status=400)
+        return old_response(
+            status="fail",
+            message=f"Party {party} does not exist",
+            data=None,
+            status_code=400,
+            http_status=400,
+        )
 
     party_account = get_party_account(party_type, party, company)
     account_currency = get_account_currency(party_account)
-    _party_name = "title" if party_type == "Shareholder" else party_type.lower() + "_name"
+    _party_name = (
+        "title" if party_type == "Shareholder" else party_type.lower() + "_name"
+    )
     party_name = frappe.db.get_value(party_type, party, _party_name)
     if party_type in ["Customer", "Supplier"]:
         party_bank_account = get_party_bank_account(party_type, party)
-        company_default_bank_account = get_default_company_bank_account(company, party_type, party)
-        company_account_ledger = frappe.get_cached_value("Bank Account", company_default_bank_account, ["account", "bank", "bank_account_no"], as_dict=1)
-        company_account_ledger_currency = frappe.db.get_value("Account", company_account_ledger["account"], "account_currency") if company_account_ledger["account"] else None
+        company_default_bank_account = get_default_company_bank_account(
+            company, party_type, party
+        )
+        company_account_ledger = frappe.get_cached_value(
+            "Bank Account",
+            company_default_bank_account,
+            ["account", "bank", "bank_account_no"],
+            as_dict=1,
+        )
+        company_account_ledger_currency = (
+            frappe.db.get_value(
+                "Account", company_account_ledger["account"], "account_currency"
+            )
+            if company_account_ledger["account"]
+            else None
+        )
 
     return old_response(
+        status="success",
+        message="Bank Account created successfully.",
+        data={
+            "party_ledger_account": party_account,
+            "party_name": party_name,
+            "party_account_currency": account_currency,
+            "party_bank_account": party_bank_account,
+            "company_bank_account": company_default_bank_account,
+            "company_account_ledger": company_account_ledger["account"],
+            "company_account_ledger_currency": company_account_ledger_currency,
+        },
+        status_code=201,
+        http_status=201,
+    )
+
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_currencies():
+    try:
+        txt = frappe.request.args.get("search", "")
+        page = int(frappe.request.args.get("page", 1))
+        page_size = int(frappe.request.args.get("page_size", 10))
+
+        start = (page - 1) * page_size
+
+        conditions = ""
+        values = {}
+
+        if txt:
+            conditions = """
+                WHERE name LIKE %(txt)s
+                OR currency_name LIKE %(txt)s
+            """
+            values["txt"] = f"%{txt}%"
+
+        total_items = frappe.db.sql(
+            f"""
+            SELECT COUNT(*) FROM `tabCurrency`
+            {conditions}
+            """,
+            values,
+        )[0][0]
+
+        rows = frappe.db.sql(
+            f"""
+            SELECT name, currency_name
+            FROM `tabCurrency`
+            {conditions}
+            ORDER BY name
+            LIMIT %(start)s, %(page_size)s
+            """,
+            {**values, "start": start, "page_size": page_size},
+            as_dict=True,
+        )
+
+        data = [
+            {
+                "value": row.name,
+                "label": f"{row.name} - {row.currency_name or ''}".strip(" -"),
+            }
+            for row in rows
+        ]
+
+        total_pages = (total_items + page_size - 1) // page_size
+
+        return send_response(
             status="success",
-            message="Bank Account created successfully.",
+            message="Currencies fetched successfully.",
             data={
-                    "party_ledger_account": party_account,
-                    "party_name": party_name,
-                    "party_account_currency": account_currency,
-                    "party_bank_account": party_bank_account,
-                    "company_bank_account": company_default_bank_account,
-                    "company_account_ledger": company_account_ledger["account"],
-                    "company_account_ledger_currency": company_account_ledger_currency
+                "data": data,
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "items_in_page": len(data),
+                    "total_items": total_items,
+                    "total_pages": total_pages,
+                    "has_next": page < total_pages,
+                    "has_previous": page > 1,
                 },
-            status_code=201,
-            http_status=201,
+            },
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Currencies API Error")
+        return send_response(
+            status="fail",
+            message=str(e),
+            data=None,
+            status_code=500,
+            http_status=500,
         )
