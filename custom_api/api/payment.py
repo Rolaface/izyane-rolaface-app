@@ -406,16 +406,16 @@ def get_all_payments():
         if party_type:
             filters["party_type"] = party_type
 
-        party_name = args.get("partyName")
+        partyName = args.get("partyName")
         party_type = args.get("partyType")  # "Customer" or "Supplier"
-        if party_name and party_type:
+        if partyName and party_type:
             if party_type == "Customer":
                 party_name = frappe.db.get_value(
-                    "Customer", {"customer_name": party_name}, "name"
+                    "Customer", {"customer_name": partyName}, "name"
                 )
             elif party_type == "Supplier":
                 party_name = frappe.db.get_value(
-                    "Supplier", {"supplier_name": party_name}, "name"
+                    "Supplier", {"supplier_name": partyName}, "name"
                 )
             else:
                 party_name = None
@@ -423,7 +423,7 @@ def get_all_payments():
             if not party_name:
                 return send_response(
                     status="error",
-                    message=f"{party_type} with ID '{party_id}' not found.",
+                    message=f"{party_type} with ID '{partyName}' not found.",
                     data=None,
                     status_code=404,
                     http_status=404,
