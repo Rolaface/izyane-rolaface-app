@@ -469,6 +469,9 @@ def get_all_payments():
                 ["party", "like", f"%{search}%"],
                 ["mode_of_payment", "like", f"%{search}%"],
                 ["reference_no", "like", f"%{search}%"],
+                ["party_type", "like", f"%{search}%"],
+                ["payment_type", "like", f"%{search}%"],
+                ["company", "like", f"%{search}%"]
             ]
 
             try:
