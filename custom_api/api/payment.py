@@ -317,27 +317,10 @@ def create_payment_entry():
         )
 
     except Exception as e:
-
-        try:
-            # Safely check if pe exists and was submitted
-            if pe and pe.get("name"):
-                docstatus = frappe.db.get_value("Payment Entry", pe.name, "docstatus")
-                if docstatus == 1:
-                    return old_response(
-                        status="success",
-                        message="Payment entry created successfully.",
-                        data={
-                            "paymentId": pe.name,
-                            "status":    "Submitted",
-                            "warning":   str(e)
-                        },
-                        status_code=201,
-                        http_status=201
-                    )
-        except Exception:
-            pass  # pe doesn't exist at all
-
         frappe.log_error(frappe.get_traceback(), "Create Payment Entry API Error")
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        
         frappe.db.rollback()
 
         return old_response(
