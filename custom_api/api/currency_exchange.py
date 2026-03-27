@@ -50,114 +50,14 @@ def _format_currency_doc(doc):
     }
 
 
-# @frappe.whitelist(allow_guest=False, methods=["GET"])
-# def get_currency_exchanges():
-#     """
-#     Fetch Currency Exchange records with pagination, search, and filtering.
-#     """
-#     search_term = _get_arg("search", "").strip().lower()
-#     from_currency = _get_arg("from_currency")
-#     to_currency = _get_arg("to_currency")
-#     date = _get_arg("date")
-
-#     page = int(_get_arg("page", 1))
-#     page_size = int(_get_arg("page_size", 100))
-
-#     filters = {}
-#     if from_currency:
-#         filters["from_currency"] = from_currency.upper()
-#     if to_currency:
-#         filters["to_currency"] = to_currency.upper()
-#     if date:
-#         filters["date"] = date
-
-#     or_filters = []
-#     if search_term:
-#         or_filters = [
-#             ["name", "like", f"%{search_term}%"],
-#             ["from_currency", "like", f"%{search_term}%"],
-#             ["to_currency", "like", f"%{search_term}%"],
-#         ]
-
-#     fields = [
-#         "name",
-#         "date",
-#         "from_currency",
-#         "to_currency",
-#         "exchange_rate",
-#         "for_buying",
-#         "for_selling",
-#         "creation",
-#         "modified",
-#     ]
-
-#     raw_data = frappe.get_all(
-#         "Currency Exchange",
-#         filters=filters,
-#         or_filters=or_filters,
-#         fields=fields,
-#         order_by="date desc, name desc",
-#     )
-
-#     rows = []
-#     for row in raw_data:
-#         rows.append(
-#             {
-#                 "id": row.get("name"),
-#                 "date": row.get("date"),
-#                 "from_currency": row.get("from_currency"),
-#                 "to_currency": row.get("to_currency"),
-#                 "exchange_rate": _format_currency(row.get("exchange_rate")),
-#                 "purpose": {
-#                     "for_buying": bool(row.get("for_buying")),
-#                     "for_selling": bool(row.get("for_selling")),
-#                 },
-#                 "timestamps": {
-#                     "created_at": row.get("creation"),
-#                     "modified_at": row.get("modified"),
-#                 },
-#             }
-#         )
-
-#     total_items = len(rows)
-#     total_pages = math.ceil(total_items / page_size) if page_size else 1
-
-#     start = (page - 1) * page_size
-#     end = start + page_size
-
-#     paginated_rows = rows[start:end]
-
-#     pagination = {
-#         "page": page,
-#         "page_size": page_size,
-#         "items_in_page": len(paginated_rows),
-#         "total_items": total_items,
-#         "total_pages": total_pages,
-#         "has_next": page < total_pages,
-#         "has_previous": page > 1,
-#     }
-
-#     return send_response(
-#         status="success",
-#         message="Currency Exchange rates fetched successfully.",
-#         data={
-#             "data": paginated_rows,
-#             "pagination": pagination,
-#         },
-#         status_code=200,
-#         http_status=200,
-#     )
-
-
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_currency_exchanges():
-    """
-    Fetch Currency Exchange records with DB-level pagination, search, and filtering.
-    """
     search_term = _get_arg("search", "").strip().lower()
     from_currency = _get_arg("from_currency")
     to_currency = _get_arg("to_currency")
     date = _get_arg("date")
+    for_buying = _get_arg("for_buying")
+    for_selling = _get_arg("for_selling")
 
     page = int(_get_arg("page", 1))
     page_size = int(_get_arg("page_size", 100))
@@ -165,12 +65,19 @@ def get_currency_exchanges():
     start = (page - 1) * page_size
 
     filters = {}
+
     if from_currency:
         filters["from_currency"] = from_currency.upper()
     if to_currency:
         filters["to_currency"] = to_currency.upper()
     if date:
         filters["date"] = date
+
+    if for_buying is not None:
+        filters["for_buying"] = int(for_buying)
+
+    if for_selling is not None:
+        filters["for_selling"] = int(for_selling)
 
     or_filters = []
     if search_term:
