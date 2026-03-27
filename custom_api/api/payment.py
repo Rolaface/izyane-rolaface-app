@@ -14,7 +14,8 @@ def get_ledger_account():
         party_type   = frappe.request.args.get("partyType", "Customer")
 
         company = frappe.defaults.get_user_default("Company")
-
+        if payment_type == "Internal Transfer":   #in case of Internal Transfer we have mapped payment_type = payment_type this is just to make sure flow does'nt break
+            party_type = "Internal Transfer"
         # ── Account type maps per party_type ──────────────────────────────────
         account_type_map = {
             "Customer": {
@@ -33,6 +34,10 @@ def get_ledger_account():
                 "from": ["Bank", "Cash", "Equity"],
                 "to":   ["Payable", "Equity"],
             },
+            "Internal Transfer":{
+                "from": ["Bank", "Cash"],
+                "to":   ["Bank", "Cash"]
+            }
         }
 
         # Fallback to Customer if party_type not found
