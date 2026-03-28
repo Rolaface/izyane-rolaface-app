@@ -160,12 +160,15 @@ def create_payment_entry():
             )
 
         # ── Required fields ───────────────────────────────────────────────────
-        required = [
-            "payment_type", "party_type", "party_id",
-            "mode_of_payment", "payment_date",
-            "paid_from", "paid_to",
-            "paid_from_amount"
-        ]
+        if data.get["payment_type"] == "Internal Transfer":
+            required = ["paid_from", "paid_to"]
+        else:
+            required = [
+                "payment_type", "party_type", "party_id",
+                "mode_of_payment", "payment_date",
+                "paid_from", "paid_to",
+                "paid_from_amount"
+            ]
         missing = validate_required(data, required)
         if missing:
             return old_response(
@@ -181,7 +184,7 @@ def create_payment_entry():
 
         # ── Extract fields ────────────────────────────────────────────────────
         payment_type     = data.get("payment_type")
-        party_type       = data.get("party_type")
+        party_type       = data.get("party_type", None)
         party_id         = data.get("party_id")
         payment_mode     = data.get("mode_of_payment")
         payment_date     = data.get("payment_date")
@@ -218,7 +221,7 @@ def create_payment_entry():
             )
 
         # ── Validate party type ───────────────────────────────────────────────
-        valid_party_types = ["Customer", "Supplier", "Employee", "Shareholder"]
+        valid_party_types = ["Customer", "Supplier", "Employee", "Shareholder", None]
         if party_type not in valid_party_types:
             return old_response(
                 status="error",
@@ -229,15 +232,17 @@ def create_payment_entry():
             )
 
         # ── Resolve party ─────────────────────────────────────────────────────
-        party_name = data.get("party_id") or resolve_party_name(party_type, party_id)
-        if not party_name:
-            return old_response(
-                status="error",
-                message=f"{party_type} with ID '{party_id}' not found.",
-                data=None,
-                status_code=404,
-                http_status=404
-            )
+        party_name = None
+        if payment_type != "Internal Transfer": 
+            party_name = data.get("party_id") or resolve_party_name(party_type, party_id)
+            if not party_name:
+                return old_response(
+                    status="error",
+                    message=f"{party_type} with ID '{party_id}' not found.",
+                    data=None,
+                    status_code=404,
+                    http_status=404
+                )
         
         if not (paid_from_currency == paid_to_currency or paid_from_currency == company_currency
                     or paid_to_currency == company_currency
