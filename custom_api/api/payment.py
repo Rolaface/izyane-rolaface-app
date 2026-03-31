@@ -114,19 +114,26 @@ def build_references(references, pe):
 
         if not reference_doctype or not reference_name:
             continue
+        
+        if reference_doctype == "Purchase Order":
+            outstanding = frappe.db.get_value(
+                reference_doctype, reference_name, "grand_total") or 0
 
-        outstanding = frappe.db.get_value(
-            reference_doctype, reference_name, "outstanding_amount"
-        ) or 0
+            total_amount = frappe.db.get_value(
+                reference_doctype, reference_name, "base_grand_total") or 0
 
-        total_amount = frappe.db.get_value(
-            reference_doctype, reference_name, "grand_total"
-        ) or 0
+        else:
+            outstanding = frappe.db.get_value(
+                reference_doctype, reference_name, "outstanding_amount"
+            ) or 0
+
+            total_amount = frappe.db.get_value(
+                reference_doctype, reference_name, "grand_total"
+            ) or 0
 
         pe.append("references", {
             "reference_doctype":  reference_doctype,
             "reference_name":     reference_name,
-            "due_date":           ref.get("due_date"),
             "total_amount":       total_amount,
             "outstanding_amount": outstanding,
             "allocated_amount":   allocated_amount,
