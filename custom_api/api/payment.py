@@ -250,14 +250,15 @@ def create_payment_entry():
                     status_code=404,
                     http_status=404
                 )
-        if not references or len(references) == 0:
-            return old_response(
-                status="error",
-                message="At least one Purchase Invoice, Purchase Order, or Sales Invoice must be provided to create a payment entry.",
-                data=None,
-                status_code=400,
-                http_status=400
-            )
+        if party_type in ["Customer", "Supplier"]:  #Later on we need handle case for Emplyee and Shareholder as well
+            if not references or len(references) == 0:
+                return old_response(
+                    status="error",
+                    message="At least one Purchase Invoice, Purchase Order, or Sales Invoice must be provided to create a payment entry.",
+                    data=None,
+                    status_code=400,
+                    http_status=400
+                )
 
         if not (paid_from_currency == paid_to_currency or paid_from_currency == company_currency
                     or paid_to_currency == company_currency
