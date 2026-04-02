@@ -187,6 +187,8 @@ def parties_and_accounts():
             filter_fields = None
             if doc_filter in ["Supplier", "Customer"]:
                 filter_fields = '["default_currency"]'
+            if doc_filter in ["Currency"]:
+                filter_fields = '["default_currency", "symbol", "number_format"]'
             if doc_filter == "Bank":
                 filter_fields = '["swift_number"]'
 

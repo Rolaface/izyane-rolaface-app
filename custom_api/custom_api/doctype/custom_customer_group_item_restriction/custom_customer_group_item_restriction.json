@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "autoname": "field:customer_group",
+ "creation": "2026-03-31 06:33:46.511313",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_group",
+  "restriction_mode",
+  "enabled",
+  "items_section",
+  "items"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer Group",
+   "options": "Customer Group",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "restriction_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Restriction Mode",
+   "options": "Allow\nDeny",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "options": "1"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Custom Item Restriction"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-31 19:34:30.083392",
+ "modified_by": "Administrator",
+ "module": "Custom Api",
+ "name": "Custom Customer Group Item Restriction",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "customer_group"
+}
