@@ -1,4 +1,5 @@
-from custom_api.api.organization.company.service import get_company_details, update_company_details, upload_file, remove_attach
+from custom_api.api.organization.company.service import (get_company_details, update_company_details, upload_file, remove_attach,
+                                                         save_company_terms)
 from custom_api.utils.response import send_old_response
 import frappe
 
@@ -111,6 +112,38 @@ def upload_company_documents():
     except Exception as e:
         frappe.log_error(message=str(e), title="Upload Company Documents API Error")
 
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["POST"])
+def update_terms():
+    try:
+        data = frappe.local.form_dict
+
+        result = save_company_terms(data)
+
+        return send_old_response(
+            status="success",
+            message="Company terms saved successfully",
+            data=result,
+            status_code=200,
+            http_status=200
+        )
+
+    except frappe.ValidationError as ve:
+        return send_old_response(
+            status="fail",
+            message=str(ve),
+            status_code=400,
+            http_status=400
+        )
+
+    except Exception as e:
+        frappe.log_error(message=str(e), title="Update Company Terms API Error")
         return send_old_response(
             status="fail",
             message=str(e),

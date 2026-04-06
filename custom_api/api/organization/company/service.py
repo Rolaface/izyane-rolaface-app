@@ -3,6 +3,7 @@ from custom_api.api.organization.company.utlis.utils import build_company_respon
 from mimetypes import guess_type
 from frappe.utils.image import optimize_image
 from frappe.utils import cint
+from custom_api.api.organization.company.utlis.terms_utils import sync_company_terms
 
 def get_company_details():
 
@@ -73,3 +74,20 @@ def upload_file(file, doctype, docname, fieldname, folder="Home", is_private=0, 
 				"content": content,
 			}
 		).save(ignore_permissions=True)
+
+
+def save_company_terms(data):
+    company_name = frappe.defaults.get_user_default("Company")
+
+    if not company_name:
+        frappe.throw("No default company set")
+
+    terms_data = data.get("terms")
+    if not terms_data:
+        frappe.throw("No terms data provided")
+
+    company = frappe.get_doc("Company", company_name)
+    result = sync_company_terms(company, terms_data)
+    frappe.db.commit()
+
+    return result

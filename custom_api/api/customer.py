@@ -329,7 +329,7 @@ def sync_payment_terms(parent_doc, payment_data: Dict):
         raise frappe.ValidationError(f"Payment phases must sum to exactly 100%. Current sum is {round(total_pct, 2)}%.")
 
 
-def sync_terms(parent_doc, terms_data: Any):
+def sync_terms(parent_doc, terms_data: Any, terms_type: str = "selling"):
     if not terms_data:
         return
 
@@ -337,24 +337,31 @@ def sync_terms(parent_doc, terms_data: Any):
         try: terms_data = json.loads(terms_data)
         except json.JSONDecodeError: raise frappe.ValidationError("Invalid JSON format in 'terms' object.")
 
-    selling_terms = terms_data.get("selling")
+    selling_terms = terms_data.get(terms_type)
     if not selling_terms:
         return
 
     sync_payment_terms(parent_doc, selling_terms.get("payment", {}))
 
     doc_title = getattr(parent_doc, _get_title_field(parent_doc.doctype), parent_doc.name)
-    expected_tc_name = f"{doc_title} Terms"
+    expected_tc_name = f"{doc_title} {terms_type.capitalize()} Terms"
     
-    if frappe.db.exists("Terms and Conditions", expected_tc_name):
+    if frappe.db.exists("Terms and Conditions", {"title": expected_tc_name, 
+                                                 "selling": 1 if terms_type == "selling" else 0,
+                                                 "buying": 1 if terms_type == "buying" else 0
+                                                }):
         tc = frappe.get_doc("Terms and Conditions", expected_tc_name)
-        tc.terms = json.dumps(selling_terms)
+        tc.terms = json.dumps(terms_data)
+        tc.selling = 1 if terms_type == "selling" else 0
+        tc.buying = 1 if terms_type == "buying" else 0
         tc.save(ignore_permissions=True)
     else:
         frappe.get_doc({
             "doctype": "Terms and Conditions", "title": expected_tc_name,
-            "terms": json.dumps(selling_terms), "selling": 1, "buying": 0
+            "terms": json.dumps(selling_terms), "selling": 1 if terms_type == "selling" else 0, "buying": 1 if terms_type == "buying" else 0
         }).insert(ignore_permissions=True)
+
+    return expected_tc_name
 
 
 def get_linked_addresses(link_doctype: str, link_name: str) -> List[Dict]:
