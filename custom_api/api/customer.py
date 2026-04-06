@@ -508,12 +508,12 @@ def update_customer(id=None, **kwargs):
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
-def get_customer_by_id(customer_id):
+def get_customer_by_id(id):
     try:
-        if not frappe.db.exists("Customer", customer_id):
+        if not frappe.db.exists("Customer", id):
             return send_response(status="fail", message="Customer not found", status_code=404, http_status=404)
 
-        customer = frappe.get_doc("Customer", customer_id)
+        customer = frappe.get_doc("Customer", id)
 
         data = {
             "name": customer.customer_name,
