@@ -254,7 +254,7 @@ def sync_contacts(parent_doc, contacts_data: Any, is_update: bool = False):
                 except frappe.exceptions.LinkExistsError: pass
 
 
-def sync_payment_terms(parent_doc, payment_data: Dict):
+def sync_payment_terms(parent_doc, payment_data: Dict, terms_type: str):
     if not payment_data or not isinstance(payment_data, dict):
         return
 
@@ -263,7 +263,7 @@ def sync_payment_terms(parent_doc, payment_data: Dict):
         return
 
     doc_title = getattr(parent_doc, _get_title_field(parent_doc.doctype), parent_doc.name)
-    template_name = f"{doc_title[:100]} PT"
+    template_name = f"{doc_title} {terms_type.capitalize()} PT"
 
     existing_terms = []
     
@@ -341,7 +341,7 @@ def sync_terms(parent_doc, terms_data: Any, terms_type: str = "selling"):
     if not selling_terms:
         return
 
-    sync_payment_terms(parent_doc, selling_terms.get("payment", {}))
+    sync_payment_terms(parent_doc, selling_terms.get("payment", {}), terms_type)
 
     doc_title = getattr(parent_doc, _get_title_field(parent_doc.doctype), parent_doc.name)
     expected_tc_name = f"{doc_title} {terms_type.capitalize()} Terms"
