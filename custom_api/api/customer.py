@@ -37,10 +37,6 @@ def validate_customer_payload(data: Dict[str, Any]):
         raise frappe.exceptions.DuplicateEntryError(f"Customer with TPIN {tpin} already exists.")
 
 
-def _get_title_field(doctype: str) -> str:
-    return {"Customer": "customer_name", "Supplier": "supplier_name", "Lead": "lead_name"}.get(doctype, "name")
-
-
 def unlink_and_disable_docs(child_doctype: str, parent_doctype: str, parent_name: str, disable: bool = True):
     linked_docs = frappe.get_all(
         "Dynamic Link",
@@ -64,7 +60,6 @@ def unlink_and_disable_docs(child_doctype: str, parent_doctype: str, parent_name
             except frappe.exceptions.LinkExistsError:
                 pass
 
-
 def sync_addresses(parent_doc, addresses_data: Any, is_update: bool = False):
     if not addresses_data:
         return
@@ -75,7 +70,7 @@ def sync_addresses(parent_doc, addresses_data: Any, is_update: bool = False):
 
     link_doctype = parent_doc.doctype
     link_name = parent_doc.name
-    doc_title = getattr(parent_doc, _get_title_field(link_doctype), link_name)
+    doc_title = parent_doc.name
 
     existing_links = frappe.get_all("Dynamic Link", filters={"parenttype": "Address", "link_doctype": link_doctype, "link_name": link_name}, pluck="parent")
     existing_addresses = set(existing_links)
@@ -87,7 +82,7 @@ def sync_addresses(parent_doc, addresses_data: Any, is_update: bool = False):
         addr_id = addr.get("id") or addr.get("name")
         is_primary = 1 if addr.get("isPrimary") or i == 0 else 0
 
-        if is_update and addr_id and addr_id in existing_addresses:
+        if is_update and addr_id and frappe.db.exists("Address", addr_id):
             address = frappe.get_doc("Address", addr_id)
             address.address_title = doc_title
             address.address_type = addr.get("type", address.address_type)
@@ -96,9 +91,14 @@ def sync_addresses(parent_doc, addresses_data: Any, is_update: bool = False):
             address.city = addr.get("city", address.city)
             address.state = addr.get("state", address.state)
             address.pincode = addr.get("postalCode", address.pincode)
-            address.country = (addr.get("country") or address.country).title()
+            address.country = addr.get("country").title() if addr.get("country") else address.country
             address.is_primary_address = is_primary
             address.is_shipping_address = 1 if addr.get("isShipping") else 0
+            
+            link_exists = any(l.link_doctype == link_doctype and l.link_name == link_name for l in address.links)
+            if not link_exists:
+                address.append("links", {"link_doctype": link_doctype, "link_name": link_name})
+
             address.save(ignore_permissions=True)
             processed_addresses.add(address.name)
         else:
@@ -262,7 +262,7 @@ def sync_payment_terms(parent_doc, payment_data: Dict, terms_type: str):
     if not phases or not isinstance(phases, list):
         return
 
-    doc_title = getattr(parent_doc, _get_title_field(parent_doc.doctype), parent_doc.name)
+    doc_title = parent_doc.name
     template_name = f"{doc_title} {terms_type.capitalize()} PT"
 
     existing_terms = []
@@ -343,7 +343,7 @@ def sync_terms(parent_doc, terms_data: Any, terms_type: str = "selling"):
 
     sync_payment_terms(parent_doc, selling_terms.get("payment", {}), terms_type)
 
-    doc_title = getattr(parent_doc, _get_title_field(parent_doc.doctype), parent_doc.name)
+    doc_title = parent_doc.name
     expected_tc_name = f"{doc_title} {terms_type.capitalize()} Terms"
     
     if frappe.db.exists("Terms and Conditions", {"title": expected_tc_name, 
@@ -530,9 +530,9 @@ def get_customer_by_id(id):
             "mobile": customer.mobile_no,
             "email": customer.email_id,
             "customerGroup": customer.customer_group,
-            "contacts": get_linked_contacts("Customer", customer.name),
-            "addresses": get_linked_addresses("Customer", customer.name),
-            "terms": get_linked_terms(customer.customer_name)
+            "contacts": get_linked_contacts("Customer", id),
+            "addresses": get_linked_addresses("Customer", id),
+            "terms": get_linked_terms(f"{id} Selling" )
         }
 
         return send_response(status="success", message="Customer retrieved successfully", status_code=200, data=data, http_status=200)
@@ -604,9 +604,8 @@ def delete_customer(id=None):
         if not frappe.db.exists("Customer", customer_id): 
             return send_response(status="fail", message="Customer not found", status_code=404, http_status=404)
 
-        customer_name = frappe.db.get_value("Customer", customer_id, "customer_name") or customer_id
-        expected_tc_name = f"{customer_name} Terms"
-        expected_pt_name = f"{customer_name[:100]} PT"
+        expected_tc_name = f"{customer_id} Selling Terms"
+        expected_pt_name = f"{customer_id} Selling PT"
 
         frappe.db.set_value("Customer", customer_id, {
             "customer_primary_contact": None, 
