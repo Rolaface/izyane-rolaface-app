@@ -534,7 +534,6 @@ def get_customer_by_id(id):
         frappe.log_error(frappe.get_traceback(), "Get Customer By ID Error")
         return send_response(status="error", message=f"Failed to retrieve customer: {str(e)}", status_code=500, http_status=500)
 
-
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_customers(page=1, page_size=20):
     try:
@@ -546,6 +545,7 @@ def get_customers(page=1, page_size=20):
 
         start = (page - 1) * page_size
         total_customers = frappe.db.count("Customer")
+        total_pages = (total_customers + page_size - 1) // page_size
 
         customers = frappe.get_all(
             "Customer",
@@ -567,8 +567,17 @@ def get_customers(page=1, page_size=20):
             c["contacts"] = get_linked_contacts("Customer", c["id"])
 
         response_data = {
-            "success": True, "message": "Customers retrieved successfully", "data": customers,
-            "pagination": {"page": page, "page_size": page_size, "total": total_customers, "total_pages": (total_customers + page_size - 1) // page_size}
+            "success": True, 
+            "message": "Customers retrieved successfully", 
+            "data": customers,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total_customers,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            }
         }
 
         return send_response_list(status="success", message="Success", status_code=200, data=response_data, http_status=200)

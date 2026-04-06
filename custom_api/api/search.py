@@ -7,8 +7,7 @@ from erpnext.accounts.doctype.bank_account.bank_account import (
 )
 from erpnext.accounts.party import get_party_account
 from frappe.desk.search import build_for_autosuggest, search_widget
-from erpnext.zra_client.generic_api import send_response as old_response
-
+# from erpnext.zra_client.generic_api import send_response as old_response
 def _get_pagination_args():
     try:
         page = int(frappe.request.args.get("page", 1))
@@ -42,15 +41,16 @@ def _fetch_paginated_autosuggest(
 
     if txt and search_fields:
         or_filters = [[doctype, field, "like", f"%{txt}%"] for field in search_fields]
+        
+        # FIX for Frappe v16: Using UPPERCASE dictionary syntax for aggregate function
         count_result = frappe.get_all(
             doctype,
             filters=filters,
             or_filters=or_filters,
-            fields=["count(name) as total"],
+            fields=[{"COUNT": "name"}],
+            as_list=True,
         )
-        total_items = (
-            count_result[0].total if count_result and count_result[0].total else 0
-        )
+        total_items = count_result[0][0] if count_result and count_result[0] else 0
     else:
         total_items = frappe.db.count(doctype, filters=filters)
 
@@ -68,7 +68,6 @@ def _fetch_paginated_autosuggest(
             "has_previous": page > 1,
         },
     }
-
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_payable_accounts():
@@ -129,6 +128,17 @@ def get_customers():
         return send_response_list("success", "Customers fetched successfully.", data)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Customers API Error")
+        return send_response("fail", str(e), None, 500, 500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_customers_group():
+    try:
+        data = _fetch_paginated_autosuggest(
+            "Customer Group", frappe._dict({}), ["name", "customer_group_name"]
+        )
+        return send_response_list("success", "Customers Group fetched successfully.", data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Customers Group API Error")
         return send_response("fail", str(e), None, 500, 500)
 
 
@@ -234,7 +244,7 @@ def get_party_details(party_type, party, cost_center=None):
     company = frappe.defaults.get_user_default("Company")
     company_currency = frappe.defaults.get_user_default("Currency")
     if not frappe.db.exists(party_type, party):
-        return old_response(
+        return send_response(
             status="fail",
             message=f"Party {party} does not exist",
             data=None,
@@ -286,7 +296,7 @@ def get_party_details(party_type, party, cost_center=None):
         total_outstanding = sum(inv.get("outstanding_amount", 0) or 0 for inv in invoices)
 
 
-    return old_response(
+    return send_response(
         status="success",
         message="Bank Account created successfully.",
         data={
