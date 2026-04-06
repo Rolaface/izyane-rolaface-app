@@ -2,6 +2,7 @@ import frappe
 from custom_api.api.organization.company.utlis.address_utils import create_or_update_company_address, get_company_addresses
 
 def build_company_response(company):
+    addresses = get_company_addresses(company.name)
     return {
         "tpin": company.tax_id,
         "companyName": company.company_name,
@@ -19,7 +20,7 @@ def build_company_response(company):
             "companyLogoUrl": company.company_logo or "",
             "authorizedSignatureUrl": company.custom_company_signature or ""
         },
-        "address": get_company_addresses(company.name)[0]   # Assuming one address per company for now, can be extended to support multiple addresses in the future
+        "address": addresses[0] if addresses else None  # Assuming one address per company for now, can be extended to support multiple addresses in the future
     }
 
 def map_company_update_fields(company, data):
