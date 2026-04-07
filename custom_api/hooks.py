@@ -238,3 +238,6 @@ app_license = "mit"
 # }
 
 fixtures = ["Custom Field"]
+# custom_api/hooks.py
+
+after_request = ["custom_api.utils.hooks.pagination_hook.inject_pagination_metadata"]
