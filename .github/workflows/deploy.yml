@@ -19,19 +19,25 @@ jobs:
             echo "📂 Switching to bench..."
             cd /srv/apps/erp/backend/rolaface-izayne-bench
 
-            echo "📦 Backup..."
+            echo "🔌 Activating environment..."
+            source env/bin/activate
+
+            echo "📦 Taking backup..."
             bench --site api.erp.udvell.rolaface.com backup
 
             echo "⬇️ Pull latest app code..."
             cd apps/custom_api
             git pull origin main
 
-            echo "⚙️ Run migrations..."
+            echo "⚙️ Running migrations..."
             cd ..
             bench --site api.erp.udvell.rolaface.com migrate
 
-            echo "🎨 Build assets..."
+            echo "🎨 Building assets..."
             bench build
 
-            echo "🔄 Restart via Supervisor..."
-            sudo supervisorctl restart all
+            echo "🧹 Clearing cache..."
+            bench clear-cache
+
+            echo "🔄 Restarting services..."
+            sudo supervisorctl restart frappe:
