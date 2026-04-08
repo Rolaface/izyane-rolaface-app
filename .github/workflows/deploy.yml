@@ -54,7 +54,10 @@ jobs:
               cd \"\$BENCH_DIR\"
 
               echo '⚙️ Run migrations...'
-              bench --site \"\$SITE\" migrate 2>&1; MIGRATE_EXIT=\$?
+              set +e
+              bench --site \"\$SITE\" migrate 2>&1
+              MIGRATE_EXIT=\$?
+              set -e
               if [ \"\$MIGRATE_EXIT\" -eq 0 ] || [ \"\$MIGRATE_EXIT\" -eq 2 ]; then
                 echo \"✅ Migration complete (exit code: \$MIGRATE_EXIT)\"
               else
