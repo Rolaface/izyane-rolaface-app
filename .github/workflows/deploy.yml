@@ -46,6 +46,7 @@ jobs:
               cd .. && bench --site api.erp.udvell.rolaface.com migrate
 
               echo '🎨 Build assets...'
+              npx update-browserslist-db@latest --yes
               bench build
 
               echo '🧹 Clear cache...'
