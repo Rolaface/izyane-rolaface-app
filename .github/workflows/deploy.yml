@@ -1,0 +1,37 @@
+name: Deploy Frappe App (Production)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            echo "📂 Switching to bench..."
+            cd /srv/apps/erp/backend/rolaface-izayne-bench
+
+            echo "📦 Backup..."
+            bench --site api.erp.udvell.rolaface.com backup
+
+            echo "⬇️ Pull latest app code..."
+            cd apps/custom_api
+            git pull origin main
+
+            echo "⚙️ Run migrations..."
+            cd ..
+            bench --site api.erp.udvell.rolaface.com migrate
+
+            echo "🎨 Build assets..."
+            bench build
+
+            echo "🔄 Restart via Supervisor..."
+            sudo supervisorctl restart all
