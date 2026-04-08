@@ -13,31 +13,33 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             echo "📂 Switching to bench..."
             cd /srv/apps/erp/backend/rolaface-izayne-bench
 
-            echo "🔌 Activating environment..."
-            source env/bin/activate
+            echo "🔌 Running as frappe user..."
+            su - frappe -c "
+              cd /srv/apps/erp/backend/rolaface-izayne-bench
 
-            echo "📦 Taking backup..."
-            bench --site api.erp.udvell.rolaface.com backup
+              source env/bin/activate
 
-            echo "⬇️ Pull latest app code..."
-            cd apps/custom_api
-            git pull origin main
+              echo '📦 Backup...'
+              bench --site api.erp.udvell.rolaface.com backup
 
-            echo "⚙️ Running migrations..."
-            cd ..
-            bench --site api.erp.udvell.rolaface.com migrate
+              echo '⬇️ Pull latest code...'
+              cd apps/custom_api && git pull origin main
 
-            echo "🎨 Building assets..."
-            bench build
+              echo '⚙️ Run migrations...'
+              cd .. && bench --site api.erp.udvell.rolaface.com migrate
 
-            echo "🧹 Clearing cache..."
-            bench clear-cache
+              echo '🎨 Build assets...'
+              bench build
+
+              echo '🧹 Clear cache...'
+              bench clear-cache
+            "
 
             echo "🔄 Restarting services..."
-            sudo supervisorctl restart frappe:
+            supervisorctl restart frappe:
