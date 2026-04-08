@@ -58,6 +58,6 @@ jobs:
             " || { echo '❌ Deploy script failed'; exit 1; }
 
             echo "🔄 Restarting services..."
-            supervisorctl restart frappe: || { echo '❌ Service restart failed'; exit 1; }
+            supervisorctl restart rolaface-izayne-bench-web: rolaface-izayne-bench-workers: || { echo '❌ Service restart failed'; exit 1; }
 
             echo "✅ Deploy complete!"
