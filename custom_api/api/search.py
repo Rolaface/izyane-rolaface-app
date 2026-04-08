@@ -152,6 +152,17 @@ def get_suppliers():
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
         return send_response("fail", str(e), None, 500, 500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_item_groups():
+    try:
+        data = _fetch_paginated_autosuggest(
+            "Item Group", frappe._dict({}), ["name", "item_group_name"]
+        )
+        return send_response_list("success", "Item Groups fetched successfully.", data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Item Groups API Error")
+        return send_response("fail", str(e), None, 500, 500)
 
 
 
