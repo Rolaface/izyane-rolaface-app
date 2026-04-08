@@ -1,28 +1,39 @@
-name: Deploy Frappe App (Production)
+name: Deploy ERP
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_HOST }}
-          username: root
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          port: 22
           script: |
-            echo "📂 Switching to bench..."
+            echo "📂 Switching to bench directory..."
             cd /srv/apps/erp/backend/rolaface-izayne-bench
 
             echo "🔌 Running as frappe user..."
             su - frappe -c "
               cd /srv/apps/erp/backend/rolaface-izayne-bench
 
+              # Load nvm and switch to Node 24
+              export NVM_DIR=\"$HOME/.nvm\"
+              [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"
+              nvm use 24
+
+              # Activate virtual environment
               source env/bin/activate
 
               echo '📦 Backup...'
@@ -38,7 +49,7 @@ jobs:
               bench build
 
               echo '🧹 Clear cache...'
-              bench clear-cache
+              bench --site api.erp.udvell.rolaface.com clear-cache
             "
 
             echo "🔄 Restarting services..."
