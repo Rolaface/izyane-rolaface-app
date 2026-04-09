@@ -91,9 +91,10 @@ def get_customer_groups():
         "Customer Group",
         filters=filters,
         or_filters=or_filters,
-        fields=["count(name) as total_count"],
+        fields=[{"COUNT": "name"}],
+        as_list=True,
     )
-    total_items = count_result[0].get("total_count", 0) if count_result else 0
+    total_items = count_result[0][0] if count_result and count_result[0] else 0
 
     raw_data = frappe.get_all(
         "Customer Group",
