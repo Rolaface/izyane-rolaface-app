@@ -67,9 +67,11 @@ def get_tax_categories_service(args):
     return {
         "data": categories,
         "pagination": {
-            "page": page,
-            "page_size": page_size,
-            "total_count": total_count,
-            "total_pages": (total_count + page_size - 1) // page_size
-        }
+                "page": page,
+                "page_size": page_size,
+                "total": total_count,
+                "total_pages": max(1, (total_count + page_size - 1) // page_size),
+                "has_next": page < total_count,
+                "has_prev": page > 1
+            }
     }
