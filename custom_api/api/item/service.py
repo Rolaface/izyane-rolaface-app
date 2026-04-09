@@ -24,7 +24,7 @@ def create_item_service(data: dict):
 
 def get_items_service(params):
 
-    page = int(params.get("page", 1))
+    current_page = int(params.get("page", 1))
     page_size = int(params.get("page_size", 10))
 
     filters = _build_filters(params)
@@ -46,7 +46,7 @@ def get_items_service(params):
             "has_batch_no",
             "has_expiry_date"
         ],
-        limit_start=(page - 1) * page_size,
+        limit_start=(current_page - 1) * page_size,
         limit_page_length=page_size
     )
 
@@ -58,11 +58,13 @@ def get_items_service(params):
     return {
         "data": data,
         "pagination": {
-            "page": page,
-            "page_size": page_size,
-            "total_records": total_count,
-            "total_pages": (total_count // page_size) + (1 if total_count % page_size else 0)
-        }
+                "page": current_page,
+                "page_size": page_size,
+                "total": total_count,
+                "total_pages": max(1, (total_count + page_size - 1) // page_size),
+                "has_next": current_page < total_count,
+                "has_prev": current_page > 1
+            }
     }
 
 def _build_filters(params):
