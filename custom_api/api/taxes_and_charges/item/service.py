@@ -59,11 +59,13 @@ def get_item_tax_templates_service(args):
     return {
         "templates": templates,
         "pagination": {
-            "page": page,
-            "page_size": page_size,
-            "total_count": total_count,
-            "total_pages": (total_count + page_size - 1) // page_size
-        }
+                "page": page,
+                "page_size": page_size,
+                "total": total_count,
+                "total_pages": max(1, (total_count + page_size - 1) // page_size),
+                "has_next": page < total_count,
+                "has_prev": page > 1
+            }
     }
 
 def update_item_tax_status_service(data):
