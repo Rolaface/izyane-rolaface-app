@@ -20,7 +20,7 @@ def map_item_tax_template(doc, data):
 
     for row in taxes:
         doc.append("taxes", {
-            "tax_type": get_tax_account(company.name, "Liability"),
+            "tax_type": row.get("tax_type") or get_tax_account(company.name, "Liability"),
             "tax_rate": row.get("tax_rate")
         })
 

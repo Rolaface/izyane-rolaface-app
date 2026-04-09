@@ -65,3 +65,30 @@ def get_item_tax_templates_service(args):
             "total_pages": (total_count + page_size - 1) // page_size
         }
     }
+
+def update_item_tax_status_service(data):
+    name = data.get("name")
+    disabled = data.get("disabled")
+
+    if not name:
+        frappe.throw("Item Tax Template 'name' is required")
+
+    if disabled is None:
+        frappe.throw("'disabled' field is required (0 or 1)")
+
+    if int(disabled) not in [0, 1]:
+        frappe.throw("'disabled' must be 0 (Enable) or 1 (Disable)")
+
+    if not frappe.db.exists("Item Tax Template", name):
+        frappe.throw("Item Tax Template not found")
+
+    doc = frappe.get_doc("Item Tax Template", name)
+
+    doc.disabled = int(disabled)
+
+    doc.save(ignore_permissions=True)
+
+    return {
+        "name": doc.name,
+        "disabled": doc.disabled
+    }
