@@ -25,6 +25,7 @@ def update_company_details(data):
     company = frappe.get_doc("Company", company_name)
 
     map_company_update_fields(company, data)
+    save_company_terms(company, data)
 
     company.save(ignore_permissions=False)
     frappe.db.commit()
@@ -76,7 +77,7 @@ def upload_file(file, doctype, docname, fieldname, folder="Home", is_private=0, 
 		).save(ignore_permissions=True)
 
 
-def save_company_terms(data):
+def save_company_terms(company, data):
     company_name = frappe.defaults.get_user_default("Company")
 
     if not company_name:
@@ -86,7 +87,6 @@ def save_company_terms(data):
     if not terms_data:
         frappe.throw("No terms data provided")
 
-    company = frappe.get_doc("Company", company_name)
     result = sync_company_terms(company, terms_data)
     frappe.db.commit()
 

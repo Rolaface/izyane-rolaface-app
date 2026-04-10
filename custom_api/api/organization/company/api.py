@@ -118,35 +118,3 @@ def upload_company_documents():
             status_code=500,
             http_status=500
         )
-
-@frappe.whitelist(allow_guest=False, methods=["POST"])
-def update_terms():
-    try:
-        data = frappe.local.form_dict
-
-        result = save_company_terms(data)
-
-        return send_old_response(
-            status="success",
-            message="Company terms saved successfully",
-            data=result,
-            status_code=200,
-            http_status=200
-        )
-
-    except frappe.ValidationError as ve:
-        return send_old_response(
-            status="fail",
-            message=str(ve),
-            status_code=400,
-            http_status=400
-        )
-
-    except Exception as e:
-        frappe.log_error(message=str(e), title="Update Company Terms API Error")
-        return send_old_response(
-            status="fail",
-            message=str(e),
-            status_code=500,
-            http_status=500
-        )

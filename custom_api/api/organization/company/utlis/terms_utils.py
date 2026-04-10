@@ -1,5 +1,5 @@
 import json
-from custom_api.api.customer import sync_terms
+from custom_api.api.selling.customer.utils import sync_terms
 import frappe
 
 def sync_company_terms(company_doc, terms_data) -> dict:
