@@ -82,12 +82,19 @@ def update():
 
         item = update_item_service(id, data)
 
-        return {
-            "status": "success",
-            "message": "Item updated successfully",
-            "data": item.name
-        }
+        return send_old_response(
+            status="success",
+            message="Item updated successfully",
+            data=item.name,
+            status_code=200,
+            http_status=200
+        )
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Update Item API Error")
-        frappe.throw(str(e))
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
