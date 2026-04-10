@@ -14,8 +14,8 @@ def create():
             status="success",
             message="Item created successfully",
             data=item.name,
-            status_code=200,
-            http_status=200
+            status_code=201,
+            http_status=201
         )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Create Item API Error")
