@@ -32,7 +32,7 @@ def create_item_prices(item_doc, data: dict):
             supplier=data.get("vendorInfo").get("preferredVendor") if data.get("vendorInfo") else None
         )
 
-def _create_price(item_code, price, price_list, uom, currency, selling=0, buying=0):
+def _create_price(item_code, price, price_list, uom, currency, selling=0, buying=0, supplier=None):
 
     existing_price = frappe.db.exists("Item Price", {
                                         "item_code": item_code,
@@ -53,6 +53,7 @@ def _create_price(item_code, price, price_list, uom, currency, selling=0, buying
             "currency": currency,
             "valid_from": nowdate(),
             "selling": selling,
-            "buying": buying
+            "buying": buying,
+            "supplier": supplier
         })
         doc.insert(ignore_permissions=True)

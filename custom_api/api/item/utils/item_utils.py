@@ -26,6 +26,8 @@ def map_to_frappe_item(data: dict, brand: str) -> dict:
         "has_batch_no": 1 if data.get("batchInfo", {}).get("has_batch_no") else 0,
         "has_expiry_date": 1 if data.get("batchInfo", {}).get("has_expiry_date") else 0,
         
+        "country_of_origin": data.get("countryOfOrigin") or "",
+
         "uoms": [
             {
                 "uom": data.get("unitOfMeasureCd") or "Nos",
@@ -33,6 +35,7 @@ def map_to_frappe_item(data: dict, brand: str) -> dict:
             }
         ],
         "taxes": _map_taxes(data),
+        "custom_item_metadata": _save_item_metadata(data)
     }
 
 def _map_taxes(data):
@@ -58,6 +61,19 @@ def _map_taxes(data):
 
     return mapped_taxes
 
+def _save_item_metadata(data):
+    return [{
+        "packing_unit": data.get("packingUnit") or "",
+        "packing_size": data.get("packingSize") or "",
+        "length": data.get("dimensionLength") or "",
+        "width": data.get("dimensionWidth") or "",
+        "height": data.get("dimensionHeight") or "",
+        "re_order_level": data.get("inventoryInfo", {}).get("reorderLevel") or "",
+        "min_stock_level": data.get("inventoryInfo", {}).get("minStockLevel") or "",
+        "max_stock_level": data.get("inventoryInfo", {}).get("maxStockLevel") or "",
+        "hsn_code": data.get("itemClassCode") or "",
+    }]
+
 def validate_item_payload(data):
 
     required_fields = ["itemName", "itemGroup"]
@@ -82,8 +98,9 @@ def map_item_response(item):
     # Tax
     tax = _get_tax(item.name)
 
-    # Reorder
-    reorder = _get_reorder(item.name)
+    item_metadata = frappe.db.get_value("Custom Item Details", 
+                                        {"parent": item.name}, 
+                                        ["*"], as_dict=True)
 
     return {
         "id": item.name,
@@ -102,11 +119,21 @@ def map_item_response(item):
 
         "taxInfo": tax,
 
+        "countryOfOrigin": item.country_of_origin or "",
+
+        "dimensionLength": item_metadata.length if item_metadata else "",
+        "dimensionWidth": item_metadata.width if item_metadata else "",
+        "dimensionHeight": item_metadata.height if item_metadata else "",
+        "packingUnit": item_metadata.packing_unit if item_metadata else "",
+        "packingSize": item_metadata.packing_size if item_metadata else "",
+        "itemClassCode": item_metadata.hsn_code if item_metadata else "",
+
         "inventoryInfo": {
             "valuationMethod": item.valuation_method or "",
             "trackingMethod": _get_tracking_method(item),
-            "reorderLevel": reorder.get("reorder_level", "0"),
-            "minStockLevel": reorder.get("min_qty", "0"),
+            "reorderLevel": item_metadata.get("re_order_level") if item_metadata else "0",
+            "minStockLevel": item_metadata.get("min_stock_level") if item_metadata else "0",
+            "maxStockLevel": item_metadata.get("max_stock_level") if item_metadata else "0",
         },
 
         "batchInfo": {
@@ -145,23 +172,6 @@ def _get_tax(item_code):
     }
 
 
-def _get_reorder(item_code):
-    reorder = frappe.db.get_value(
-        "Item Reorder",
-        {"parent": item_code},
-        ["warehouse_reorder_level", "warehouse_reorder_qty"],
-        as_dict=True
-    )
-
-    if not reorder:
-        return {}
-
-    return {
-        "reorder_level": reorder.warehouse_reorder_level,
-        "min_qty": reorder.warehouse_reorder_qty
-    }
-
-
 def _get_tracking_method(item):
     if item.has_batch_no:
         return "batch"
@@ -188,7 +198,6 @@ def _update_basic_fields(item_doc, data, brand):
 
     item_doc.has_batch_no = 1 if batch_info.get("has_batch_no") else 0
     item_doc.has_expiry_date = 1 if batch_info.get("has_expiry_date") else 0
-    item_doc.end_of_life = batch_info.get("endOfLife") or "2099-12-31"
 
 def _update_uom(item_doc, data):
 
@@ -218,3 +227,18 @@ def _update_taxes(item_doc, data):
             "item_tax_template": tax_name,
             "tax_category": tax_category
         })
+            
+def _update_item_metadata(item_doc, data):
+
+    item_doc.custom_item_metadata = []
+    item_doc.append("custom_item_metadata", {
+        "packing_unit": data.get("packingUnit") or "",
+        "packing_size": data.get("packingSize") or "",
+        "length": data.get("dimensionLength") or "",
+        "width": data.get("dimensionWidth") or "",
+        "height": data.get("dimensionHeight") or "",
+        "re_order_level": data.get("inventoryInfo", {}).get("reorderLevel") or "",
+        "min_stock_level": data.get("inventoryInfo", {}).get("minStockLevel") or "",
+        "max_stock_level": data.get("inventoryInfo", {}).get("maxStockLevel") or "",
+        "hsn_code": data.get("itemClassCode") or "",
+    })

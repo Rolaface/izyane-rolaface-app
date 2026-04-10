@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-10 15:16:42.508710",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "custom_item_details_section",
+  "hsn_code",
+  "packing_details_column",
+  "packing_unit",
+  "packing_size",
+  "custom_inventory_fields_section",
+  "min_stock_level",
+  "max_stock_level",
+  "re_order_level",
+  "dimension_details_column",
+  "length",
+  "width",
+  "height"
+ ],
+ "fields": [
+  {
+   "fieldname": "custom_item_details_section",
+   "fieldtype": "Section Break",
+   "label": "Custom Item Details"
+  },
+  {
+   "fieldname": "hsn_code",
+   "fieldtype": "Data",
+   "label": "HSN Code"
+  },
+  {
+   "fieldname": "packing_details_column",
+   "fieldtype": "Column Break",
+   "label": "Packing Details"
+  },
+  {
+   "fieldname": "packing_unit",
+   "fieldtype": "Float",
+   "label": "Packing Unit"
+  },
+  {
+   "fieldname": "packing_size",
+   "fieldtype": "Float",
+   "label": "Packing Size"
+  },
+  {
+   "fieldname": "custom_inventory_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Custom Inventory Fields"
+  },
+  {
+   "fieldname": "min_stock_level",
+   "fieldtype": "Data",
+   "label": "Min Stock Level"
+  },
+  {
+   "fieldname": "max_stock_level",
+   "fieldtype": "Data",
+   "label": "Max Stock Level"
+  },
+  {
+   "fieldname": "re_order_level",
+   "fieldtype": "Data",
+   "label": "Re Order Level"
+  },
+  {
+   "fieldname": "dimension_details_column",
+   "fieldtype": "Column Break",
+   "label": "Dimension Details"
+  },
+  {
+   "fieldname": "length",
+   "fieldtype": "Float",
+   "label": "Length"
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "label": "Width"
+  },
+  {
+   "fieldname": "height",
+   "fieldtype": "Float",
+   "label": "Height"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-10 15:33:42.078008",
+ "modified_by": "Administrator",
+ "module": "Custom Api",
+ "name": "Custom Item Details",
+ "owner": "abhishek.sati@rolaface.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
