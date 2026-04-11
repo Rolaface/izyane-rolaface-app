@@ -145,8 +145,10 @@ def sync_addresses(parent_doc, addresses_data: Any, is_update: bool = False):
 
     if primary_address:
         fieldname = f"{link_doctype.lower()}_primary_address"
+        print(f"fieldname: {fieldname}")
         if frappe.db.has_column(parent_doc.doctype, fieldname):
-            parent_doc.db_set(fieldname, primary_address, update_modified=False)
+            # parent_doc.db_set(fieldname, primary_address, update_modified=False)
+            parent_doc.set(fieldname, primary_address)
 
     if is_update:
         addresses_to_remove = existing_addresses - processed_addresses

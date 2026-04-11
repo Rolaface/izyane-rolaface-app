@@ -25,6 +25,7 @@ def create_supplier(data):
     sync_addresses(supplier, data.get("addresses"), is_update=False)
     sync_contacts(supplier, data.get("contacts"), is_update=False)
     sync_terms(supplier, data.get("terms"), terms_type="buying")
+    supplier.save(ignore_permissions=True)
 
     return supplier
 
@@ -49,6 +50,7 @@ def update_supplier(supplier_id, data):
     sync_contacts(supplier, data.get("contacts"), is_update=True)
     sync_addresses(supplier, data.get("addresses"), is_update=True)
     sync_terms(supplier, data.get("terms"), terms_type="buying")
+    supplier.save(ignore_permissions=True)
 
     return supplier
 
