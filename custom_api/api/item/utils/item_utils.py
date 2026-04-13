@@ -108,9 +108,10 @@ def map_item_response(item, tax_category=None):
         "itemGroup": item.item_group,
         "unitOfMeasureCd": item.stock_uom,
 
-        "sellingPrice": selling_price.price_list_rate if selling_price else 0.0,
-        "buyingPrice": buying_price.price_list_rate if buying_price else 0.0,
-        "vendorInfo": {"preferredVendor": buying_price.get("supplier") if buying_price else ""},
+        "sellingPrice": selling_price["price_list_rate"] if selling_price else 0.0,
+        "buyingPrice": buying_price["price_list_rate"] if buying_price else 0.0,
+        "vendorInfo": {"preferredVendor": buying_price.get("supplier") if buying_price else "",
+                       "preferredVendorName": buying_price.get("supplier_name") if buying_price else ""},
         "brand": item.brand or "",
         "description": item.description or "",
 
@@ -152,7 +153,24 @@ def _get_price(item_code, price_list):
         ["price_list_rate", "supplier"],
         as_dict=True
     )
-    return price
+
+    if not price:
+        return {}
+
+    supplier_name = ""
+
+    if price.supplier:
+        supplier_name = frappe.db.get_value(
+                        "Supplier",
+                        price.supplier,
+                        "supplier_name"
+                    )
+
+    return {
+        "price_list_rate": price.price_list_rate or 0,
+        "supplier": price.supplier or "",
+        "supplier_name": supplier_name
+    }
 
 def _get_tax(item_code, tax_category=None):
     filters = {"parent": item_code}
