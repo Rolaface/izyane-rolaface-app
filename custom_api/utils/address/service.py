@@ -23,7 +23,8 @@ def get_address_list_service(company=None, customer=None, supplier=None,
             "country",
             "pincode",
             "email_id",
-            "phone"
+            "phone",
+            "address_type"
         ]
     )
 

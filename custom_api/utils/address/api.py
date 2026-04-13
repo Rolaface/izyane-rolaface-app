@@ -7,14 +7,14 @@ def get_address_list(
     company=None,
     customer=None,
     supplier=None,
-    address_type=None,
+    addressType=None,
     search=None
 ):
     response =  get_address_list_service(
                         company=company,
                         customer=customer,
                         supplier=supplier,
-                        address_type=address_type,
+                        address_type=addressType,
                         search=search
                 )
 

@@ -53,7 +53,8 @@ def map_address_response(addresses):
             "country": addr.get("country"),
             "pincode": addr.get("pincode"),
             "email": addr.get("email_id"),
-            "phone": addr.get("phone")
+            "phone": addr.get("phone"),
+            "addressType": addr.get("address_type")
         })
 
     return data
