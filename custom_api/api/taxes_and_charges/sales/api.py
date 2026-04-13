@@ -45,7 +45,7 @@ def update_sales_tax_template():
 
         return send_old_response(
             status="success",
-            message=f"Sales Tax Template {'patched' if is_patch else 'updated'} successfully",
+            message=f"Sales Tax Template updated successfully",
             data=result,
             status_code=200,
             http_status=200
@@ -88,9 +88,10 @@ def get_sales_tax_templates():
 @frappe.whitelist(methods=["PUT"])
 def update_sales_tax_status():
     try:
+        template_name = frappe.request.args.get("name")
         data = frappe.request.get_json()
 
-        result = update_sales_tax_status_service(data)
+        result = update_sales_tax_status_service(data, template_name)
 
         return send_old_response(
             status="success",
