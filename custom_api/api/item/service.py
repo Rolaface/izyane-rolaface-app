@@ -54,7 +54,8 @@ def get_items_service(params):
     total_count = frappe.db.count("Item", filters=filters)
 
     # Map response
-    data = [map_item_response(item) for item in items]
+    tax_category = params.get("taxCategory")
+    data = [map_item_response(item, tax_category) for item in items]
 
     return {
         "data": data,
@@ -72,7 +73,7 @@ def _build_filters(params):
     filters = {}
 
     if params.get("id"):
-        filters["name"] = ["like", f"%{params.get('id')}%"]
+        filters["name"] = params.get("id")
 
     if params.get("item_name"):
         filters["item_name"] = ["like", f"%{params.get('item_name')}%"]

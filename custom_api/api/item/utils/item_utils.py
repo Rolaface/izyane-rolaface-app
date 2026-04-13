@@ -89,14 +89,14 @@ def validate_item_payload(data):
     if data.get("buyingPrice") and float(data.get("buyingPrice")) < 0:
         frappe.throw("Buying price cannot be negative")
 
-def map_item_response(item):
+def map_item_response(item, tax_category=None):
 
     # Prices
     selling_price = _get_price(item.name, "Standard Selling")
     buying_price = _get_price(item.name, "Standard Buying")
 
     # Tax
-    tax = _get_tax(item.name)
+    tax = _get_tax(item.name, tax_category)
 
     item_metadata = frappe.db.get_value("Custom Item Details", 
                                         {"parent": item.name}, 
@@ -154,23 +154,42 @@ def _get_price(item_code, price_list):
     )
     return price
 
+def _get_tax(item_code, tax_category=None):
+    filters = {"parent": item_code}
 
-def _get_tax(item_code):
-    tax = frappe.db.get_value(
+    if tax_category:
+        filters["tax_category"] = tax_category
+
+    item_taxes = frappe.get_all(
         "Item Tax",
-        {"parent": item_code},
-        ["item_tax_template", "tax_category"],
-        as_dict=True
+        filters=filters,
+        fields=["item_tax_template", "tax_category"]
     )
 
-    if not tax:
-        return {}
+    if not item_taxes:
+        return []
 
-    return {
-        "taxCategory": tax.tax_category or "",
-        "taxName": tax.item_tax_template or "",
-    }
+    result = []
 
+    for tax in item_taxes:
+        tax_rates = []
+
+        if tax.item_tax_template:
+            tax_details = frappe.get_all(
+                "Item Tax Template Detail",
+                filters={"parent": tax.item_tax_template},
+                fields=["tax_type", "tax_rate"]
+            )
+
+            tax_rates = tax_details
+
+        result.append({
+            "taxCategory": tax.tax_category or "",
+            "taxName": tax.item_tax_template or "",
+            "taxRates": tax_rates
+        })
+
+    return result
 
 def _get_tracking_method(item):
     if item.has_batch_no:
