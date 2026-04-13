@@ -17,6 +17,7 @@ def get_company_addresses(company_name):
         address = frappe.get_doc("Address", link.parent)
 
         addresses.append({
+            "name": address.name,
             "addressType": address.address_type,
             "isPrimary": address.is_primary_address,
             "addressLine1": address.address_line1,
