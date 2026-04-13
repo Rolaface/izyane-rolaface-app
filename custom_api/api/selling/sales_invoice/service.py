@@ -4,8 +4,6 @@ from frappe.utils import flt, cint, add_days
 from ....api.buying.purchase_order.utils import _get_item_tax_template
 from .utils import _get_receivable_account_by_currency, ensure_batch, sync_invoice_terms, sync_taxes, _save_sales_invoice_box_detail
 
-
-
 def create_sales_invoice(data):
     doc_args = {
         "doctype": "Sales Invoice",
@@ -23,7 +21,8 @@ def create_sales_invoice(data):
         "taxes_and_charges": data.get("salesTaxTemplate"),
         "debit_to": _get_receivable_account_by_currency(data.get("currency")),
         "items": [],
-        "custom_item_box_detail": []
+        "custom_item_box_detail": [],
+        "custom_details": []
     }
 
     for item in data.get("items", []):
@@ -48,6 +47,12 @@ def create_sales_invoice(data):
             _save_sales_invoice_box_detail(item)
         )
 
+    payment_mode = data.get("paymentMode") or data.get("payment_mode")
+    if payment_mode:
+        doc_args["custom_details"].append({
+            "payment_mode": payment_mode
+        })
+
     invoice = frappe.get_doc(doc_args).insert(ignore_permissions=True)
 
     needs_save = False
@@ -62,6 +67,7 @@ def create_sales_invoice(data):
         invoice.save(ignore_permissions=True)
 
     return invoice
+
 
 def update_sales_invoice(invoice_id, data):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
@@ -107,6 +113,14 @@ def update_sales_invoice(invoice_id, data):
             
             invoice.append("custom_item_box_detail", _save_sales_invoice_box_detail(item))
 
+    if "paymentMode" in data or "payment_mode" in data:
+        payment_mode = data.get("paymentMode") or data.get("payment_mode")
+        invoice.set("custom_details", []) # Clear existing to replace with new
+        if payment_mode:
+            invoice.append("custom_details", {
+                "payment_mode": payment_mode
+            })
+
     sync_taxes(invoice, data)
     invoice.save(ignore_permissions=True)
 
@@ -116,9 +130,11 @@ def update_sales_invoice(invoice_id, data):
 
     return invoice
 
+
 def get_sales_invoice_by_id(invoice_id):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
     box_details = invoice.get("custom_item_box_detail", [])
+    custom_details = invoice.get("custom_details", [])
 
     data = {
         "id": invoice.name,
@@ -135,6 +151,7 @@ def get_sales_invoice_by_id(invoice_id):
         "salesTaxTemplate": invoice.taxes_and_charges,
         "status": invoice.status,
         "docstatus": invoice.docstatus,
+        "paymentMode": custom_details[0].payment_mode if custom_details else None,
         "items": [],
         "taxes": [],
         "terms": {}
