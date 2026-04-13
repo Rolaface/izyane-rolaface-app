@@ -1,3 +1,4 @@
+from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice
 import frappe
 from custom_api.utils.response import send_old_response, send_response_list
 from .service import create_po_service, get_po_by_id, update_po_service, get_po_list
@@ -108,6 +109,37 @@ def get_by_id():
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Purchase Order By ID API Error")
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["POST"])
+def create_pi_from_po():
+
+    po_id = frappe.request.args.get("po_id")
+    if not po_id:
+        frappe.throw("PO ID is required")
+
+    try:
+        pi_doc = make_purchase_invoice(po_id)
+
+        pi_doc.docstatus = 0
+
+        pi_doc.insert(ignore_permissions=True)
+
+        return send_old_response(
+            status="success",
+            message="Purchase Invoice created successfully from Purchase Order",
+            data=pi_doc,
+            status_code=201,
+            http_status=201
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Create PI from PO Error")
         return send_old_response(
             status="fail",
             message=str(e),
