@@ -2,7 +2,14 @@ import json
 import frappe
 from frappe.utils import flt, cint, add_days
 from ....api.buying.purchase_order.utils import _get_item_tax_template
-from .utils import _get_receivable_account_by_currency, ensure_batch, sync_invoice_terms, sync_taxes, _save_sales_invoice_box_detail
+from .utils import (
+    _get_receivable_account_by_currency,
+    ensure_batch,
+    sync_invoice_terms,
+    sync_taxes,
+    _save_sales_invoice_box_detail,
+)
+
 
 def create_sales_invoice(data):
     doc_args = {
@@ -22,7 +29,7 @@ def create_sales_invoice(data):
         "debit_to": _get_receivable_account_by_currency(data.get("currency")),
         "items": [],
         "custom_item_box_detail": [],
-        "custom_details": []
+        "custom_details": [],
     }
 
     for item in data.get("items", []):
@@ -34,24 +41,24 @@ def create_sales_invoice(data):
         if batch_no:
             ensure_batch(item_code, batch_no, mfg_date, exp_date)
 
-        doc_args["items"].append({
-            "item_code": item_code,
-            "qty": item.get("quantity"),
-            "rate": item.get("rate"),
-            "warehouse": item.get("warehouse", data.get("warehouse")),
-            "batch_no": batch_no,
-            "item_tax_template": _get_item_tax_template(item_code, data.get("tax_category")),
-        })
-
-        doc_args["custom_item_box_detail"].append(
-            _save_sales_invoice_box_detail(item)
+        doc_args["items"].append(
+            {
+                "item_code": item_code,
+                "qty": item.get("quantity"),
+                "rate": item.get("rate"),
+                "warehouse": item.get("warehouse", data.get("warehouse")),
+                "batch_no": batch_no,
+                "item_tax_template": _get_item_tax_template(
+                    item_code, data.get("tax_category")
+                ),
+            }
         )
+
+        doc_args["custom_item_box_detail"].append(_save_sales_invoice_box_detail(item))
 
     payment_mode = data.get("paymentMode") or data.get("payment_mode")
     if payment_mode:
-        doc_args["custom_details"].append({
-            "payment_mode": payment_mode
-        })
+        doc_args["custom_details"].append({"payment_mode": payment_mode})
 
     invoice = frappe.get_doc(doc_args).insert(ignore_permissions=True)
 
@@ -73,13 +80,21 @@ def update_sales_invoice(invoice_id, data):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
 
     if invoice.docstatus == 1:
-        raise frappe.ValidationError("Cannot edit a submitted Sales Invoice. Cancel it first.")
+        raise frappe.ValidationError(
+            "Cannot edit a submitted Sales Invoice. Cancel it first."
+        )
 
     field_map = {
-        "customerId": "customer", "currency": "currency", "exchangeRate": "conversion_rate",
-        "postingDate": "posting_date", "dueDate": "due_date", "tax_category": "tax_category",
-        "warehouse": "set_warehouse", "billingAddress": "customer_address", 
-        "shippingAddress": "shipping_address_name", "salesTaxTemplate": "taxes_and_charges"
+        "customerId": "customer",
+        "currency": "currency",
+        "exchangeRate": "conversion_rate",
+        "postingDate": "posting_date",
+        "dueDate": "due_date",
+        "tax_category": "tax_category",
+        "warehouse": "set_warehouse",
+        "billingAddress": "customer_address",
+        "shippingAddress": "shipping_address_name",
+        "salesTaxTemplate": "taxes_and_charges",
     }
 
     for k, v in field_map.items():
@@ -93,7 +108,7 @@ def update_sales_invoice(invoice_id, data):
     if "items" in data:
         invoice.set("items", [])
         invoice.set("custom_item_box_detail", [])
-        
+
         for item in data.get("items"):
             item_code = item.get("itemCode")
             batch_no = item.get("batchNo") or item.get("batch_no")
@@ -103,23 +118,26 @@ def update_sales_invoice(invoice_id, data):
             if batch_no:
                 ensure_batch(item_code, batch_no, mfg_date, exp_date)
 
-            invoice.append("items", {
-                "item_code": item_code,
-                "qty": item.get("quantity"),
-                "rate": item.get("rate"),
-                "warehouse": item.get("warehouse", invoice.set_warehouse),
-                "batch_no": batch_no,
-            })
-            
-            invoice.append("custom_item_box_detail", _save_sales_invoice_box_detail(item))
+            invoice.append(
+                "items",
+                {
+                    "item_code": item_code,
+                    "qty": item.get("quantity"),
+                    "rate": item.get("rate"),
+                    "warehouse": item.get("warehouse", invoice.set_warehouse),
+                    "batch_no": batch_no,
+                },
+            )
+
+            invoice.append(
+                "custom_item_box_detail", _save_sales_invoice_box_detail(item)
+            )
 
     if "paymentMode" in data or "payment_mode" in data:
         payment_mode = data.get("paymentMode") or data.get("payment_mode")
-        invoice.set("custom_details", []) # Clear existing to replace with new
+        invoice.set("custom_details", [])  # Clear existing to replace with new
         if payment_mode:
-            invoice.append("custom_details", {
-                "payment_mode": payment_mode
-            })
+            invoice.append("custom_details", {"payment_mode": payment_mode})
 
     sync_taxes(invoice, data)
     invoice.save(ignore_permissions=True)
@@ -154,27 +172,34 @@ def get_sales_invoice_by_id(invoice_id):
         "paymentMode": custom_details[0].payment_mode if custom_details else None,
         "items": [],
         "taxes": [],
-        "terms": {}
+        "terms": {},
     }
 
     for item in invoice.items:
         item_data = {
             "itemCode": item.item_code,
-            "quantity": item.qty,   
+            "quantity": item.qty,
             "rate": item.rate,
             "warehouse": item.warehouse,
             "batchNo": item.batch_no,
-            "itemTaxTemplate": item.item_tax_template
+            "itemTaxTemplate": item.item_tax_template,
         }
 
         if item.batch_no:
-            batch_info = frappe.db.get_value("Batch", item.batch_no, ["manufacturing_date", "expiry_date"], as_dict=True)
+            batch_info = frappe.db.get_value(
+                "Batch",
+                item.batch_no,
+                ["manufacturing_date", "expiry_date"],
+                as_dict=True,
+            )
             if batch_info:
                 item_data["mfgDate"] = batch_info.manufacturing_date
                 item_data["expDate"] = batch_info.expiry_date
 
         for box in box_details:
-            if box.item_code == item.item_code and (box.batch_no == item.batch_no or not box.batch_no):
+            if box.item_code == item.item_code and (
+                box.batch_no == item.batch_no or not box.batch_no
+            ):
                 item_data["boxStart"] = box.box_start
                 item_data["boxEnd"] = box.box_end
                 break
@@ -182,20 +207,25 @@ def get_sales_invoice_by_id(invoice_id):
         data["items"].append(item_data)
 
     for tax in invoice.get("taxes", []):
-        data["taxes"].append({
-            "accountHead": tax.account_head,
-            "rate": tax.rate,
-            "amount": tax.tax_amount
-        })
+        data["taxes"].append(
+            {
+                "accountHead": tax.account_head,
+                "rate": tax.rate,
+                "amount": tax.tax_amount,
+            }
+        )
 
     if invoice.tc_name and frappe.db.exists("Terms and Conditions", invoice.tc_name):
-        tc_content = frappe.db.get_value("Terms and Conditions", invoice.tc_name, "terms")
+        tc_content = frappe.db.get_value(
+            "Terms and Conditions", invoice.tc_name, "terms"
+        )
         try:
             data["terms"]["Selling"] = json.loads(tc_content)
         except Exception:
             data["terms"]["Selling"] = tc_content
 
     return data
+
 
 def get_sales_invoices(page, page_size):
     start = (page - 1) * page_size
@@ -204,8 +234,22 @@ def get_sales_invoices(page, page_size):
 
     invoices = frappe.get_all(
         "Sales Invoice",
-        fields=["name", "customer", "customer_name", "posting_date", "due_date", "base_grand_total", "currency", "conversion_rate", "outstanding_amount", "tax_category","status"],
-        limit_start=start, limit_page_length=page_size, order_by="creation desc"
+        fields=[
+            "name",
+            "customer",
+            "customer_name",
+            "posting_date",
+            "due_date",
+            "base_grand_total",
+            "currency",
+            "conversion_rate",
+            "outstanding_amount",
+            "tax_category",
+            "status",
+        ],
+        limit_start=start,
+        limit_page_length=page_size,
+        order_by="creation desc",
     )
 
     for inv in invoices:
@@ -223,50 +267,106 @@ def get_sales_invoices(page, page_size):
 
     return invoices, total_invoices, total_pages
 
+
 def delete_sales_invoice(invoice_id):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
     if invoice.docstatus == 1:
-        raise frappe.ValidationError("Cannot delete a submitted Sales Invoice. Cancel it first.")
-    
-    frappe.db.set_value("Sales Invoice", invoice_id, {
-        "tc_name": None,
-        "payment_terms_template": None
-    }, update_modified=False)
-    
+        raise frappe.ValidationError(
+            "Cannot delete a submitted Sales Invoice. Cancel it first."
+        )
+
+    frappe.db.set_value(
+        "Sales Invoice",
+        invoice_id,
+        {"tc_name": None, "payment_terms_template": None},
+        update_modified=False,
+    )
+
     frappe.delete_doc("Sales Invoice", invoice_id, ignore_permissions=True)
 
     tc_name = f"{invoice_id} Terms"
     if frappe.db.exists("Terms and Conditions", tc_name):
-        frappe.delete_doc("Terms and Conditions", tc_name, ignore_permissions=True, force=True)
+        frappe.delete_doc(
+            "Terms and Conditions", tc_name, ignore_permissions=True, force=True
+        )
 
     pt_name = f"{invoice_id} PT"
     if frappe.db.exists("Payment Terms Template", pt_name):
         template_doc = frappe.get_doc("Payment Terms Template", pt_name)
         terms_to_delete = [t.payment_term for t in template_doc.terms]
-        
-        frappe.delete_doc("Payment Terms Template", pt_name, ignore_permissions=True, force=True)
-        
+
+        frappe.delete_doc(
+            "Payment Terms Template", pt_name, ignore_permissions=True, force=True
+        )
+
         for term in terms_to_delete:
-            is_used_elsewhere = frappe.db.exists("Payment Terms Template Detail", {"payment_term": term})
-            
+            is_used_elsewhere = frappe.db.exists(
+                "Payment Terms Template Detail", {"payment_term": term}
+            )
+
             if not is_used_elsewhere:
                 try:
                     frappe.delete_doc("Payment Term", term, ignore_permissions=True)
                 except frappe.exceptions.LinkExistsError:
                     pass
 
+
 def update_sales_invoice_status(invoice_id, action):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
-    
+
+    if not frappe.has_permission("Sales Invoice", "write", invoice):
+        raise frappe.PermissionError("No permission to modify this invoice")
+
     if action == "submit":
         if invoice.docstatus == 1:
             raise frappe.ValidationError("Invoice is already submitted.")
+        if invoice.docstatus == 2:
+            raise frappe.ValidationError(
+                "Cannot submit a cancelled invoice. Please amend it first."
+            )
+
         invoice.submit()
+
+        return {
+            "id": invoice.name,
+            "status": invoice.status,
+            "docstatus": invoice.docstatus,
+        }
+
     elif action == "cancel":
         if invoice.docstatus == 2:
             raise frappe.ValidationError("Invoice is already cancelled.")
         if invoice.docstatus == 0:
-            raise frappe.ValidationError("Cannot cancel a Draft invoice. Delete it instead.")
+            raise frappe.ValidationError(
+                "Cannot cancel a Draft invoice. Submit it first."
+            )
+
         invoice.cancel()
-        
-    return invoice.status
+
+        return {
+            "id": invoice.name,
+            "status": invoice.status,
+            "docstatus": invoice.docstatus,
+        }
+
+    elif action == "amend":
+        if invoice.docstatus == 0:
+            raise frappe.ValidationError("Invoice is already in Draft state.")
+        if invoice.docstatus == 1:
+            raise frappe.ValidationError(
+                "Cannot amend a submitted invoice. Cancel it first."
+            )
+
+        amended_doc = frappe.copy_doc(invoice)
+        amended_doc.amended_from = invoice.name
+        amended_doc.docstatus = 0
+        amended_doc.insert()
+
+        return {
+            "id": amended_doc.name,
+            "status": amended_doc.status,
+            "docstatus": amended_doc.docstatus,
+        }
+
+    else:
+        raise frappe.ValidationError("Invalid action. Allowed: submit, cancel, amend")
