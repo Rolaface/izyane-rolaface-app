@@ -188,7 +188,7 @@ def _get_tax(item_code, tax_category=None):
         return []
 
     result = []
-
+    total_tax_rate = 0
     for tax in item_taxes:
         tax_rates = []
 
@@ -201,10 +201,12 @@ def _get_tax(item_code, tax_category=None):
 
             tax_rates = tax_details
 
+        total_tax_rate += sum([tax.tax_rate for tax in tax_rates])
         result.append({
             "taxCategory": tax.tax_category or "",
             "taxName": tax.item_tax_template or "",
-            "taxRates": tax_rates
+            "taxRates": tax_rates,
+            "totalTaxRate": total_tax_rate
         })
 
     return result
