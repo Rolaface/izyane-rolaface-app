@@ -219,11 +219,10 @@ def delete_sales_invoice(invoice_id):
     frappe.delete_doc("Sales Invoice", invoice_id, ignore_permissions=True)
 
     tc_name = f"{invoice_id} Terms"
-    pt_name = f"{invoice_id} PT"
-
     if frappe.db.exists("Terms and Conditions", tc_name):
         frappe.delete_doc("Terms and Conditions", tc_name, ignore_permissions=True, force=True)
 
+    pt_name = f"{invoice_id} PT"
     if frappe.db.exists("Payment Terms Template", pt_name):
         template_doc = frappe.get_doc("Payment Terms Template", pt_name)
         terms_to_delete = [t.payment_term for t in template_doc.terms]
@@ -231,10 +230,13 @@ def delete_sales_invoice(invoice_id):
         frappe.delete_doc("Payment Terms Template", pt_name, ignore_permissions=True, force=True)
         
         for term in terms_to_delete:
-            try:
-                frappe.delete_doc("Payment Term", term, ignore_permissions=True, force=True)
-            except frappe.exceptions.LinkExistsError:
-                pass
+            is_used_elsewhere = frappe.db.exists("Payment Terms Template Detail", {"payment_term": term})
+            
+            if not is_used_elsewhere:
+                try:
+                    frappe.delete_doc("Payment Term", term, ignore_permissions=True)
+                except frappe.exceptions.LinkExistsError:
+                    pass
 
 def update_sales_invoice_status(invoice_id, action):
     invoice = frappe.get_doc("Sales Invoice", invoice_id)
