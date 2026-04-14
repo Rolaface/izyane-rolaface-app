@@ -1,6 +1,6 @@
-from custom_api.utils.response import send_response_list
+from custom_api.utils.response import send_old_response, send_response_list
 import frappe
-from custom_api.api.buying.purchase_invoice.service import get_purchase_invoice_list
+from custom_api.api.buying.purchase_invoice.service import create_purchase_invoice_service, get_purchase_invoice_list
 
 @frappe.whitelist(allow_guest = False, methods=["GET"])
 def get():
@@ -27,6 +27,33 @@ def get():
             status="fail",
             message=str(e),
             data=[],
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest = False, methods=["POST"])
+def create():
+    data = frappe.local.form_dict
+    try:
+        create_purchase_invoice_service(data)
+
+        return send_old_response(
+                    status="success",
+                    message="Purchase Invoice created successfully",
+                    status_code=201,
+                    http_status=201
+                )
+    except Exception as e:
+        frappe.log_error(str(e), "Create Purchase Invoice API Error")
+
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        else:
+            frappe.db.rollback()
+
+        return send_old_response(
+            status="fail",
+            message=str(e),
             status_code=500,
             http_status=500
         )

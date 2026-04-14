@@ -48,6 +48,11 @@ def update():
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Update Purchase Order API Error")
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        else:
+            frappe.db.rollback()
+        
         return send_old_response(
             status="fail",
             message=str(e),

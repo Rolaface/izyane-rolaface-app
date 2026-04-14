@@ -1,4 +1,4 @@
-from custom_api.api.buying.purchase_order.utils import build_po_items
+from custom_api.api.buying.purchase_order.utils import build_items
 from custom_api.api.item.utils.item_utils import _get_tax
 from custom_api.helper import STATUS_MAP
 import frappe
@@ -23,7 +23,7 @@ def create_po_service(data):
 
         "currency": data.get("currency", "INR"),
 
-        "items": build_po_items(data.get("items"), data.get("supplierId")),
+        "items": build_items(data.get("items"), data.get("supplierId")),
         "billing_address": data.get("billing_address"),
         "shipping_address": data.get("shipping_address"),
         "supplier_address": data.get("supplier_address"),
@@ -32,7 +32,7 @@ def create_po_service(data):
         "tax_category": data.get("taxCategory"),
         "project": data.get("project"),
         "cost_center": data.get("costCenter"),
-        "incoterms": data.get("incoterms"),
+        "incoterm": data.get("incoterms"),
         "contact_person": data.get("contactPerson"),
     })
     
@@ -81,7 +81,7 @@ def update_po_service(po_id, data):
 
     po_doc.set("items", [])
 
-    for item in build_po_items(data.get("items"), data.get("supplierId")):
+    for item in build_items(data.get("items"), data.get("supplierId")):
         po_doc.append("items", item)
 
     po_doc.set("taxes", [])

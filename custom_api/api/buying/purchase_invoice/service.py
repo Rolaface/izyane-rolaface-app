@@ -1,3 +1,5 @@
+from custom_api.api.buying.purchase_order.utils import build_items
+from custom_api.utils.party_utils import sync_terms
 import frappe
 from custom_api.api.buying.purchase_invoice.utils import (
     build_pi_filters,
@@ -51,3 +53,49 @@ def get_purchase_invoice_list(filters=None, page=1, page_size=10, search=""):
             "has_prev": page > 1,
         }
     }
+
+def create_purchase_invoice_service(data):
+
+    if not data.get("supplierId"):
+        frappe.throw("Supplier is required")
+
+    company = frappe.defaults.get_user_default("Company")
+
+    pi_doc = frappe.get_doc({
+        "doctype": "Purchase Invoice",
+    
+        "company": company,
+        "supplier": data.get("supplierId"),
+        "contact_person": data.get("supplierContact"),
+        "update_stock": data.get("updateStock", False),
+        "posting_date": data.get("poDate"),
+        "set_warehouse": data.get("warehouse"),
+        "currency": data.get("currency", frappe.defaults.get_user_default("currency")),
+        "tax_category": data.get("taxCategory"),
+        "bill_no": data.get("spplrInvcNo"),
+        "bill_date": data.get("spplrInvcDt"),
+        "cost_center": data.get("costCenter"),
+        "project": data.get("project"),
+        "incoterm": data.get("incoterms"),
+        "billing_address": data.get("billing_address"),
+        "shipping_address": data.get("shipping_address"),
+        "supplier_address": data.get("supplier_address"),
+        "dispatch_address": data.get("dispatch_address"),
+
+        "items": build_items(data.get("items"), data.get("supplierId")),
+        "custom_invoice_metadata": [{"payment_mode": data.get("paymentType")}]
+    })
+    pi_doc.run_method("set_missing_values")
+    pi_doc.run_method("calculate_taxes_and_totals")
+
+    pi_doc.insert(ignore_permissions=True)
+
+    terms = sync_terms(pi_doc, data.get("terms"), terms_type="buying")
+    pi_doc.payment_terms_template = f"{pi_doc.name} Buying PT"   
+    pi_doc.tc_name = terms
+    pi_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
+    pi_doc.set("payment_schedule", [])
+
+    pi_doc.run_method("set_missing_values")
+    pi_doc.run_method("calculate_taxes_and_totals")
+    pi_doc.save(ignore_permissions=True)
