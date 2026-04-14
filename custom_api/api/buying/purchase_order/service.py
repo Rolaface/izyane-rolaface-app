@@ -1,4 +1,5 @@
 from custom_api.api.buying.purchase_order.utils import build_po_items
+from custom_api.api.item.utils.item_utils import _get_tax
 from custom_api.helper import STATUS_MAP
 import frappe
 from custom_api.utils.party_utils import get_linked_terms, sync_terms
@@ -169,7 +170,7 @@ def get_po_by_id(po_id):
             ["packing_unit", "packing_size"],
             as_dict=True
         )
-
+        tax = _get_tax(item.item_code, po_doc.tax_category)
         po_items.append({
             "itemCode": item.item_code,
             "itemName": item.item_name,
@@ -178,8 +179,8 @@ def get_po_by_id(po_id):
             "requiredBy": str(item.schedule_date) if item.schedule_date else None,
             "warehouse": item.warehouse,
             "uom": item.uom,
-            "itemTaxTemplate": item.item_tax_template,
-
+            # "itemTaxTemplate": item.item_tax_template,
+            "taxInfo": tax,
             "packingUnit": str(item_meta.get("packing_unit")) if item_meta else "",
             "packingSize": str(item_meta.get("packing_size")) if item_meta else ""
         })
