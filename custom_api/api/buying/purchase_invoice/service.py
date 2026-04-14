@@ -90,6 +90,8 @@ def create_purchase_invoice_service(data):
     pi_doc.run_method("calculate_taxes_and_totals")
 
     pi_doc.insert(ignore_permissions=True)
+    if not data.get("terms").get("buying"):
+        frappe.throw("Buying terms are required")
 
     terms = sync_terms(pi_doc, data.get("terms"), terms_type="buying")
     pi_doc.payment_terms_template = f"{pi_doc.name} Buying PT"   

@@ -39,6 +39,8 @@ def create_po_service(data):
     po_doc.run_method("set_missing_values")
     po_doc.run_method("calculate_taxes_and_totals")
     po_doc.insert(ignore_permissions=True)
+    if not data.get("terms").get("buying"):
+        frappe.throw("Buying terms are required")
 
     terms = sync_terms(po_doc, data.get("terms"), terms_type="buying")
     po_doc.payment_terms_template = f"{po_doc.name} Buying PT"   
