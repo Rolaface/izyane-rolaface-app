@@ -191,8 +191,15 @@ def _get_tax(item_code, tax_category=None):
     total_tax_rate = 0
     for tax in item_taxes:
         tax_rates = []
+        tax_template_title = ""
 
         if tax.item_tax_template:
+            tax_template_title = frappe.db.get_value(
+                "Item Tax Template", 
+                tax.item_tax_template, 
+                "title"
+            )
+
             tax_details = frappe.get_all(
                 "Item Tax Template Detail",
                 filters={"parent": tax.item_tax_template},
@@ -201,10 +208,11 @@ def _get_tax(item_code, tax_category=None):
 
             tax_rates = tax_details
 
-        total_tax_rate += sum([tax.tax_rate for tax in tax_rates])
+        total_tax_rate += sum([t.tax_rate for t in tax_rates])
+        
         result.append({
             "taxCategory": tax.tax_category or "",
-            "taxName": tax.item_tax_template or "",
+            "taxName": tax_template_title or tax.item_tax_template or "",
             "taxRates": tax_rates,
             "totalTaxRate": total_tax_rate
         })
