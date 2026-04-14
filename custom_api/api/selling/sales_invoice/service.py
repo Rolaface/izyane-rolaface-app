@@ -181,6 +181,7 @@ def get_sales_invoice_by_id(invoice_id):
         "docstatus": invoice.docstatus,
         "outstanding_amount": invoice.outstanding_amount,
         # "destnCountryCd": customer.outstanding_amount,
+        "roundingAdjustment": invoice.rounding_adjustment,
         "total_qty": invoice.total_qty,
         "total_tax": invoice.total_taxes_and_charges,
         "total": invoice.total,

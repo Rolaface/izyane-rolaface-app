@@ -208,6 +208,7 @@ def get_po_by_id(po_id):
         "items": po_items,
         "totalTaxes": po_doc.total_taxes_and_charges,
         "grandTotal": po_doc.grand_total,
+        "roundingAdjustment": po_doc.rounding_adjustment,
         "roundedTotal": po_doc.rounded_total,
         "contactPerson": po_doc.contact_person,
         "contactDisplay": po_doc.contact_display
