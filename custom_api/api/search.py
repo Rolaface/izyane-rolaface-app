@@ -214,6 +214,28 @@ def get_item_groups():
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Item Groups API Error")
         return send_response("fail", str(e), None, 500, 500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_incoterms():
+    try:
+        data = _fetch_paginated_autosuggest(
+            "Incoterm", frappe._dict({}), ["name", "title"]
+        )
+        return send_response_list("success", "Incoterms fetched successfully.", data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Incoterms API Error")
+        return send_response("fail", str(e), None, 500, 500)
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_shipping_rules():
+    try:
+        data = _fetch_paginated_autosuggest(
+            "Shipping Rule", frappe._dict({}), ["name", "shipping_rule_type"]
+        )
+        return send_response_list("success", "Shipping Rule fetched successfully.", data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Shipping Rule API Error")
+        return send_response("fail", str(e), None, 500, 500)
 
 
 
