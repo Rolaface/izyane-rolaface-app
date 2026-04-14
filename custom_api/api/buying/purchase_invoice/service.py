@@ -130,7 +130,7 @@ def get_purchase_invoice_by_id(pi_id):
         "piId": pi_doc.name,
         "supplierId": pi_doc.supplier,
         "supplierName": pi_doc.supplier_name,
-        "poDate": str(pi_doc.posting_date) if pi_doc.posting_date else None,
+        "piDate": str(pi_doc.posting_date) if pi_doc.posting_date else None,
         "currency": pi_doc.currency,
         "billingAddress": pi_doc.billing_address,
         "billingAddressDisplay": pi_doc.billing_address_display,
@@ -151,5 +151,7 @@ def get_purchase_invoice_by_id(pi_id):
         "roundedTotal": pi_doc.rounded_total,
         "contactPerson": pi_doc.contact_person,
         "contactDisplay": pi_doc.contact_display,
-        "paymentType": pi_doc.custom_invoice_metadata[0].payment_mode if pi_doc.custom_invoice_metadata else None
+        "paymentType": pi_doc.custom_invoice_metadata[0].payment_mode if pi_doc.custom_invoice_metadata else None,
+        "spplrInvcNo": pi_doc.bill_no,
+        "spplrInvcDt": str(pi_doc.bill_date) if pi_doc.bill_date else None,
     }
