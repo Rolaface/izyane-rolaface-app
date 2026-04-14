@@ -278,3 +278,10 @@ def _build_sales_invoice_box_detail(item: dict) -> dict:
         "box_start": item.get("boxStart") or item.get("box_start"),
         "box_end": item.get("boxEnd") or item.get("box_end"),
     }
+
+def get_extended_item_detail(item_code):
+    return frappe.get_all(
+        "Custom Item Details",
+        filters={"parent": item_code},
+        fields=["hsn_code","packing_unit","packing_size"]
+    )

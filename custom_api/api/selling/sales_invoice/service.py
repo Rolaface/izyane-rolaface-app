@@ -9,6 +9,7 @@ from .utils import (
     _build_sales_invoice_box_detail,
     _build_additional_detail,
     validate_receivable_account_for_currency,
+    get_extended_item_detail
 )
 
 
@@ -221,6 +222,19 @@ def get_sales_invoice_by_id(invoice_id):
                 item_data["boxEnd"] = box.box_end
                 break
 
+        metadata = get_extended_item_detail(item.item_code)
+
+        if metadata:
+            meta = metadata[0]
+
+            item_data.update(
+                {
+                    "hsnCode": meta.get("hsn_code"),
+                    "packingUnit": meta.get("packing_unit"),
+                    "packingSize": meta.get("packing_size"),
+                }
+            )
+            
         data["items"].append(item_data)
 
     for tax in invoice.get("taxes", []):
@@ -244,7 +258,7 @@ def get_sales_invoice_by_id(invoice_id):
     return data
 
 
-def get_sales_invoices(page, page_size):
+def get_sales_invoices(page, page_size):    
     start = (page - 1) * page_size
     total_invoices = frappe.db.count("Sales Invoice")
     total_pages = (total_invoices + page_size - 1) // page_size
