@@ -1,6 +1,6 @@
 from custom_api.utils.response import send_old_response, send_response_list
 import frappe
-from custom_api.api.buying.purchase_invoice.service import create_purchase_invoice_service, get_purchase_invoice_list
+from custom_api.api.buying.purchase_invoice.service import create_purchase_invoice_service, get_purchase_invoice_by_id, get_purchase_invoice_list
 
 @frappe.whitelist(allow_guest = False, methods=["GET"])
 def get():
@@ -51,6 +51,46 @@ def create():
         else:
             frappe.db.rollback()
 
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_by_id():
+    try:
+        pi_id = frappe.request.args.get("id")
+
+        if not pi_id:
+            return send_old_response(
+                status="fail",
+                message="Purchase Invoice ID is required",
+                status_code=400,
+                http_status=400
+            )
+
+        data = get_purchase_invoice_by_id(pi_id)
+
+        if not data:
+            return send_old_response(
+                status="fail",
+                message="Purchase Invoice not found",
+                status_code=404,
+                http_status=404
+            )
+
+        return send_old_response(
+            status="success",
+            message="Purchase Invoice retrieved successfully",
+            data=data,
+            status_code=200,
+            http_status=200
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Purchase Invoice By ID API Error")
         return send_old_response(
             status="fail",
             message=str(e),
