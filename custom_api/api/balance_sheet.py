@@ -1,11 +1,15 @@
 import frappe
 from erpnext.accounts.report.balance_sheet.balance_sheet import execute
 from custom_api.utils.response import send_response
+from erpnext.accounts.utils import get_fiscal_year
 
 def _format_currency(value):
-    if value is None:
+    if isinstance(value, (int, float)):
+        return round(value, 2)
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
         return 0.0
-    return round(float(value), 2)
 
 def _detect_period_keys(columns):
     meta_fields = {"account", "currency", "opening_balance", "closing_balance"}
@@ -62,6 +66,17 @@ def get_balance_sheet():
     periodicity = frappe.request.args.get("periodicity", "Yearly")
     from_fiscal_year = frappe.request.args.get("from_fiscal_year", current_year)
     to_fiscal_year = frappe.request.args.get("to_fiscal_year", current_year)
+
+    # fy, fy_start, fy_end = get_fiscal_year(
+    # frappe.utils.nowdate(),
+    # company=company
+    # )
+
+    # from_fiscal_year = frappe.request.args.get("from_fiscal_year") or fy
+    # to_fiscal_year = frappe.request.args.get("to_fiscal_year") or fy
+
+    # from_date = frappe.request.args.get("from_date") or fy_start
+    # to_date = frappe.request.args.get("to_date") or fy_end
     filter_based_on = frappe.request.args.get("filter_based_on", "Fiscal Year")
 
     filters = frappe._dict({
