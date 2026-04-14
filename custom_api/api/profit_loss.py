@@ -3,16 +3,19 @@ from erpnext.accounts.report.profit_and_loss_statement.profit_and_loss_statement
 from custom_api.utils.response import send_response
 
 def _format_currency(value):
-    if value is None:
+    if isinstance(value, (int, float)):
+        return round(value, 2)
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
         return 0.0
-    return round(float(value), 2)
 
 def _detect_period_keys(columns):
     meta_fields = {"account", "currency", "opening_balance", "closing_balance"}
     return [
         col.get("fieldname")
         for col in (columns or [])
-        if col.get("fieldname") and col.get("fieldname") not in meta_fields
+        if col.get("fieldname") and col.get("fieldname") not in meta_fields and col.get("fieldtype") in ("Currency", "Float")
     ]
 
 def _build_tree(raw_data, period_keys):
