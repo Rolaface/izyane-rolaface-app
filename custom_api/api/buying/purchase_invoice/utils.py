@@ -62,4 +62,5 @@ def map_pi_list_response(inv):
         "currency": inv.get("currency"),
         "status": inv.get("status"),
         "roundedTotal": rounded_total,
+        "outstanding_amount": outstanding
     }

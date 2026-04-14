@@ -32,6 +32,7 @@ def create_po_service(data):
         "project": data.get("project"),
         "cost_center": data.get("costCenter"),
         "incoterms": data.get("incoterms"),
+        "contact_person": data.get("contactPerson"),
     })
     
     po_doc.run_method("set_missing_values")
@@ -207,4 +208,6 @@ def get_po_by_id(po_id):
         "totalTaxes": po_doc.total_taxes_and_charges,
         "grandTotal": po_doc.grand_total,
         "roundedTotal": po_doc.rounded_total,
+        "contactPerson": po_doc.contact_person,
+        "contactDisplay": po_doc.contact_display
     }
