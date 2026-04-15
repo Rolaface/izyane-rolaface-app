@@ -10,7 +10,8 @@ def build_pi_filters(args):
         frappe_filters["supplier"] = args["supplier"]
 
     if args.get("status"):
-        frappe_filters["status"] = ["in", args["status"]]
+        status_filter = args.getlist("status")
+        frappe_filters["status"] = ["in", status_filter]
 
     if args.get("from_date") and args.get("to_date"):
         frappe_filters["posting_date"] = ["between", [args["from_date"], args["to_date"]]]
