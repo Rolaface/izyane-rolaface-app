@@ -10,7 +10,7 @@ def create_supplier(data):
     doc_args = {
         "doctype": "Supplier",
         "supplier_name": data.get("name"),
-        "supplier_type": data.get("type"),
+        # "supplier_type": data.get("type"),
         "supplier_group": data.get("supplierGroup", "All Supplier Groups"),
         "tax_id": data.get("tpin"),
         "tax_category": data.get("supplierTaxCategory"),
@@ -33,9 +33,13 @@ def update_supplier(supplier_id, data):
     supplier = frappe.get_doc("Supplier", supplier_id)
 
     field_map = {
-        "name": "supplier_name", "type": "supplier_type", "currency": "default_currency",
+        "name": "supplier_name", "currency": "default_currency",
         "supplierTaxCategory": "tax_category", "supplierGroup": "supplier_group"
     }
+    # field_map = {
+    #     "name": "supplier_name", "type": "supplier_type", "currency": "default_currency",
+    #     "supplierTaxCategory": "tax_category", "supplierGroup": "supplier_group"
+    # }
     for k, v in field_map.items():
         if data.get(k) is not None:
             setattr(supplier, v, data.get(k))

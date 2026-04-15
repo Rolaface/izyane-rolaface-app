@@ -154,7 +154,14 @@ def get_cost_centers():
 def get_customers():
     try:
         data = _fetch_paginated_autosuggest(
-            "Customer", frappe._dict({}), ["name", "customer_name"]
+            doctype="Customer",
+            filters=frappe._dict({}),
+            search_fields=["name", "customer_name"],
+            field_map={
+                "value": "name",
+                "label": "customer_name",
+                "description": "name",
+            },
         )
         return send_response_list("success", "Customers fetched successfully.", data)
     except Exception as e:
