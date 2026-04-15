@@ -21,7 +21,7 @@ def create_po_service(data):
         "schedule_date": data.get("schedule_date"),
         "set_warehouse": data.get("set_warehouse"),
 
-        "currency": data.get("currency", "INR"),
+        "currency": data.get("currency", frappe.defaults.get_user_default("Currency")),
 
         "items": build_items(data.get("items"), data.get("supplierId")),
         "billing_address": data.get("billing_address"),
@@ -71,7 +71,7 @@ def update_po_service(po_id, data):
     po_doc.schedule_date = data.get("schedule_date")
     po_doc.set_warehouse = data.get("set_warehouse")
 
-    po_doc.currency = data.get("currency", "INR")
+    po_doc.currency = data.get("currency", frappe.defaults.get_user_default("Currency"))
 
     po_doc.billing_address = data.get("billing_address")
     po_doc.shipping_address = data.get("shipping_address")
@@ -82,7 +82,7 @@ def update_po_service(po_id, data):
     po_doc.project = data.get("project")
     po_doc.cost_center = data.get("costCenter")
     po_doc.incoterms = data.get("incoterms")
-
+    po_doc.contact_person = data.get("contactPerson","")
 
     po_doc.set("items", [])
 

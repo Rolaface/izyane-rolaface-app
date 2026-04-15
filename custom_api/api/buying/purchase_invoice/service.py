@@ -94,14 +94,17 @@ def create_purchase_invoice_service(data):
         frappe.throw("Buying terms are required")
 
     terms = sync_terms(pi_doc, data.get("terms"), terms_type="buying")
-    pi_doc.payment_terms_template = f"{pi_doc.name} Buying PT"   
-    pi_doc.tc_name = terms
-    pi_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
-    pi_doc.set("payment_schedule", [])
+    if terms:
+        if frappe.db.exists("Payment Terms Template", f"{pi_doc.name} Buying PT"):
+            pi_doc.payment_terms_template = f"{pi_doc.name} Buying PT"   
+            pi_doc.set("payment_schedule", [])
+        pi_doc.tc_name = terms
+        pi_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
 
-    pi_doc.run_method("set_missing_values")
-    pi_doc.run_method("calculate_taxes_and_totals")
-    pi_doc.save(ignore_permissions=True)
+    if data.get("lpoNumber") or terms:
+        pi_doc.run_method("set_missing_values")
+        pi_doc.run_method("calculate_taxes_and_totals")
+        pi_doc.save(ignore_permissions=True)
 
 def get_purchase_invoice_by_id(pi_id):
     pi_doc = frappe.get_doc("Purchase Invoice", pi_id)
