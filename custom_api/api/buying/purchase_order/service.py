@@ -92,8 +92,9 @@ def update_po_service(po_id, data):
     po_doc.set("taxes", [])
 
     terms = sync_terms(po_doc, data.get("terms"), terms_type="buying")
+    if frappe.db.exists("Payment Terms Template", f"{po_doc.name} Buying PT"):
+        po_doc.payment_terms_template = f"{po_doc.name} Buying PT"
 
-    po_doc.payment_terms_template = f"{po_doc.name} Buying PT"
     po_doc.tc_name = terms
 
     # po_doc.run_method("set_tc_name")
