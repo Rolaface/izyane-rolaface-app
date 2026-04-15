@@ -63,6 +63,7 @@ def create_sales_invoice(data):
                 "rate": item.get("rate"),
                 "warehouse": item.get("warehouse", data.get("warehouse")),
                 "batch_no": batch_no,
+                # "cost_center": item.get("costCenter") or cost_center,
                 "item_tax_template": _get_item_tax_template(
                     item_code, data.get("tax_category")
                 ),
@@ -152,6 +153,7 @@ def update_sales_invoice(invoice_id, data):
                     "qty": item.get("quantity"),
                     "rate": item.get("rate"),
                     "warehouse": item.get("warehouse", invoice.set_warehouse),
+                    # "cost_center": item.get("costCenter") or cost_center,
                     "batch_no": batch_no,
                 },
             )
@@ -212,6 +214,7 @@ def get_sales_invoice_by_id(invoice_id):
         "in_words": invoice.in_words,
         "items": [],
         "taxes": [],
+        "charges": [],
         "terms": {},
     }
 
@@ -231,6 +234,7 @@ def get_sales_invoice_by_id(invoice_id):
             "rate": item.rate,
             "warehouse": item.warehouse,
             "batchNo": item.batch_no,
+            "costCenter": item.cost_center,
             "itemTaxTemplate": item.item_tax_template,
             "taxInfo": tax,
         }
@@ -270,13 +274,20 @@ def get_sales_invoice_by_id(invoice_id):
         data["items"].append(item_data)
 
     for tax in invoice.get("taxes", []):
-        data["taxes"].append(
-            {
-                "accountHead": tax.account_head,
-                "rate": tax.rate,
-                "amount": tax.tax_amount,
-            }
+        row = {
+            "accountHead": tax.account_head,
+            "rate": tax.rate,
+            "amount": tax.tax_amount,
+        }
+
+        account_type = frappe.get_cached_value(
+            "Account", tax.account_head, "account_type"
         )
+
+        if account_type == "Tax":
+            data["taxes"].append(row)
+        else:
+            data["charges"].append(row)
 
     if invoice.tc_name and frappe.db.exists("Terms and Conditions", invoice.tc_name):
         tc_content = frappe.db.get_value(
