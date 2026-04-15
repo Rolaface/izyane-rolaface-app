@@ -1,6 +1,7 @@
 import json
 # from erpnext.zra_client.main import ZRAClient
 # from erpnext.zra_client.generic_api import send_response
+from custom_api.api.item.utils.item_utils import _get_tax
 from frappe.utils.data import flt
 from datetime import datetime
 import frappe
@@ -637,6 +638,8 @@ def get_batch_wise_stock_report(
     page      = int(page)
     page_size = int(page_size)
     company   = frappe.defaults.get_global_default("company")
+    params    = frappe.request.args
+    tax_category = params.get("taxCategory")
 
     # ── Step 1: Build SQL conditions ──────────────────────────────────────────
     conditions = [
@@ -749,7 +752,9 @@ def get_batch_wise_stock_report(
                                             {"parent": item.name}, 
                                             ["*"], as_dict=True)
         item_details_map[item["item_code"]]["packing_unit"] = item_metadata.packing_unit
-        item_details_map[item["item_code"]]["packing_size"]   = item_metadata.packing_size
+        item_details_map[item["item_code"]]["packing_size"] = item_metadata.packing_size
+        item_details_map[item["item_code"]]["taxInfo"] = _get_tax(item.name, tax_category)
+
     # apply item_group filter
     if item_group:
         movement_rows = [
@@ -968,7 +973,8 @@ def get_batch_wise_stock_report(
         wh   = row["warehouse"]
 
         item_info = item_details_map.get(code, {
-            "item_name": "", "item_group": "", "stock_uom": "", "description": "", "packing_size": "", "packing_unit": ""
+            "item_name": "", "item_group": "", "stock_uom": "", "description": "", "packing_size": "", "packing_unit": "",
+            "taxInfo": ""
         })
         o = opening_map.get(code, {
             "opening_qty":    0.0,
@@ -1069,6 +1075,7 @@ def get_batch_wise_stock_report(
                 "description":         item_info.get("description", ""),
                 "packingSize":         item_info.get("packing_size",""),
                 "packingUnit":         item_info.get("packing_unit",""),
+                "taxInfo":             item_info.get("taxInfo", ""),
                 "total_opening_qty":   round(opening_qty,   4),
                 "total_opening_value": opening_value,
                 "total_in_qty":        in_qty,
