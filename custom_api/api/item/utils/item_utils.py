@@ -212,7 +212,8 @@ def _get_tax(item_code, tax_category=None):
         
         result.append({
             "taxCategory": tax.tax_category or "",
-            "taxName": tax_template_title or tax.item_tax_template or "",
+            "taxName":  tax.item_tax_template or "",
+            "taxTitle": tax_template_title or "",
             "taxRates": tax_rates,
             "totalTaxRate": total_tax_rate
         })
