@@ -190,15 +190,19 @@ def sync_invoice_terms(invoice, terms_payload):
     if is_invoice_dirty:
         invoice.save(ignore_permissions=True)
 
-
 def sync_taxes(invoice, data):
     template_name = data.get("salesTaxTemplate")
     tax_overrides = data.get("taxes", [])
 
     is_dirty = False
+
     override_map = {
         t.get("accountHead"): t for t in tax_overrides if t.get("accountHead")
     }
+
+    default_cc = invoice.cost_center or frappe.get_cached_value(
+        "Company", invoice.company, "cost_center"
+    )
 
     if template_name and frappe.db.exists(
         "Sales Taxes and Charges Template", template_name
@@ -214,7 +218,7 @@ def sync_taxes(invoice, data):
                         "charge_type": t_row.charge_type,
                         "account_head": t_row.account_head,
                         "description": t_row.description,
-                        "cost_center": t_row.cost_center,
+                        "cost_center": t_row.cost_center or default_cc,
                         "rate": t_row.rate,
                         "tax_amount": t_row.tax_amount,
                     },
@@ -223,12 +227,14 @@ def sync_taxes(invoice, data):
 
     for tax_row in invoice.get("taxes", []):
         override = override_map.get(tax_row.account_head)
+
         if override:
             if "amount" in override and override["amount"] is not None:
                 tax_row.charge_type = "Actual"
                 tax_row.rate = 0
                 tax_row.tax_amount = flt(override["amount"])
                 is_dirty = True
+
             elif "rate" in override and override["rate"] is not None:
                 if tax_row.charge_type == "Actual":
                     tax_row.charge_type = "On Net Total"
@@ -236,7 +242,16 @@ def sync_taxes(invoice, data):
                 tax_row.tax_amount = 0
                 is_dirty = True
 
+        account_type = frappe.get_cached_value(
+            "Account", tax_row.account_head, "report_type"
+        )
+
+        if account_type == "Profit and Loss" and not tax_row.cost_center:
+            tax_row.cost_center = default_cc
+            is_dirty = True
+
     return is_dirty
+
 
 def build_sales_invoice_filters(args):
 
