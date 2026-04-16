@@ -251,20 +251,40 @@ def get_sales_invoice_by_id(invoice_id):
 
         data["items"].append(item_data)
 
-    for tax in invoice.get("taxes", []):
-        row = {
-            "accountHead": tax.account_head,
-            "rate": tax.rate,
-            "amount": tax.tax_amount,
-        }
+    # for tax in invoice.get("taxes", []):
+    #     row = {
+    #         "accountHead": tax.description,
+    #         "rate": tax.rate,
+    #         "amount": tax.tax_amount,
+    #     }
 
+    #     account_type = frappe.get_cached_value(
+    #         "Account", tax.account_head, "account_type"
+    #     )
+
+    #     if account_type == "Tax":
+    #         data["taxes"].append(row)
+    #     else:
+    #         data["charges"].append(row)
+
+    for tax in invoice.get("taxes", []):
         account_type = frappe.get_cached_value(
             "Account", tax.account_head, "account_type"
         )
 
         if account_type == "Tax":
+            row = {
+                "accountHead": tax.account_head,
+                "rate": tax.rate,
+                "amount": tax.tax_amount,
+            }
             data["taxes"].append(row)
         else:
+            row = {
+                "accountHead": tax.description,
+                "rate": tax.rate,
+                "amount": tax.tax_amount,
+            }
             data["charges"].append(row)
 
     if invoice.tc_name and frappe.db.exists("Terms and Conditions", invoice.tc_name):
