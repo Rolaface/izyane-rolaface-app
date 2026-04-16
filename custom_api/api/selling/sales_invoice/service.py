@@ -180,6 +180,7 @@ def get_sales_invoice_by_id(invoice_id):
         # "destnCountryCd": customer.outstanding_amount,
         "costCenter": invoice.cost_center,
         "roundingAdjustment": invoice.rounding_adjustment,
+        "roundedTotal": invoice.rounded_total,
         "total_qty": invoice.total_qty,
         "total_tax": invoice.total_taxes_and_charges,
         "total": invoice.total,
@@ -206,7 +207,7 @@ def get_sales_invoice_by_id(invoice_id):
         item_data = {
             "itemCode": item.item_code,
             "itemName": item.item_name,
-            "uom": item.uom,
+            "uom": item.uom ,
             "quantity": item.qty,
             "rate": item.rate,
             "warehouse": item.warehouse,
