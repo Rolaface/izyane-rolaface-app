@@ -255,7 +255,7 @@ def ensure_batch(item_code, batch_no, mfg_date=None, exp_date=None):
         ).insert(ignore_permissions=True)
 
 
-def validate_receivable_account_for_currency(currency: str) -> str:
+def validate_receivable_account_for_currency(currency: str, account_type="Receivable") -> str:
     if not currency:
         frappe.throw("Currency is required.", frappe.ValidationError)
 
@@ -263,22 +263,22 @@ def validate_receivable_account_for_currency(currency: str) -> str:
     if not company:
         frappe.throw("Default company not set.", frappe.ValidationError)
 
-    account = get_receivable_account_by_currency(currency, company)
+    account = get_receivable_account_by_currency(currency, company, account_type)
 
     if not account:
         frappe.throw(
-            f"No receivable account configured for currency '{currency}' in company '{company}'.",
+            f"No {account_type} account configured for currency '{currency}' in company '{company}'.",
             frappe.ValidationError,
         )
 
     return account
 
 
-def get_receivable_account_by_currency(currency: str, company: str) -> str | None:
+def get_receivable_account_by_currency(currency: str, company: str, account_type) -> str | None:
     return frappe.db.get_value(
         "Account",
         {
-            "account_type": "Receivable",
+            "account_type": account_type,
             "company": company,
             "account_currency": currency,
             "is_group": 0,

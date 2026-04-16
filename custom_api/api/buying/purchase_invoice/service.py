@@ -1,5 +1,6 @@
 from custom_api.api.buying.purchase_order.utils import build_items
 from custom_api.api.item.utils.item_utils import _get_tax
+from custom_api.api.selling.sales_invoice.utils import validate_receivable_account_for_currency
 from custom_api.utils.party_utils import get_linked_terms, sync_terms
 import frappe
 from custom_api.api.buying.purchase_invoice.utils import (
@@ -61,6 +62,8 @@ def create_purchase_invoice_service(data):
         frappe.throw("Supplier is required")
 
     company = frappe.defaults.get_user_default("Company")
+    currency = data.get("currency", frappe.defaults.get_user_default("currency"))
+    account = validate_receivable_account_for_currency(currency, "Payable")
 
     pi_doc = frappe.get_doc({
         "doctype": "Purchase Invoice",
@@ -71,7 +74,9 @@ def create_purchase_invoice_service(data):
         "update_stock": data.get("updateStock", False),
         "posting_date": data.get("poDate"),
         "set_warehouse": data.get("warehouse"),
-        "currency": data.get("currency", frappe.defaults.get_user_default("currency")),
+        "currency": currency,
+        "credit_to": account,
+        "set_posting_time": 1,
         "tax_category": data.get("taxCategory"),
         "bill_no": data.get("spplrInvcNo"),
         "bill_date": data.get("spplrInvcDt"),
