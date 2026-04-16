@@ -241,3 +241,9 @@ fixtures = ["Custom Field"]
 # custom_api/hooks.py
 
 after_request = ["custom_api.utils.hooks.pagination_hook.inject_pagination_metadata"]
+
+doc_events = {
+    "Purchase Invoice": {
+        "validate": "custom_api.api.buying.purchase_invoice.before_validate_hooks.before_validate"
+    }
+}

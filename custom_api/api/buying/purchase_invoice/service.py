@@ -4,6 +4,7 @@ from custom_api.api.selling.sales_invoice.utils import validate_receivable_accou
 from custom_api.utils.party_utils import get_linked_terms, sync_terms
 import frappe
 from custom_api.api.buying.purchase_invoice.utils import (
+    apply_advances,
     build_pi_filters,
     apply_pi_search,
     map_pi_list_response
@@ -97,6 +98,9 @@ def create_purchase_invoice_service(data):
     pi_doc.insert(ignore_permissions=True)
     if not data.get("terms").get("buying"):
         frappe.throw("Buying terms are required")
+
+    if data.get("lpoNumber"):
+        apply_advances(data.get("lpoNumber"), pi_doc)
 
     terms = sync_terms(pi_doc, data.get("terms"), terms_type="buying")
     if terms:

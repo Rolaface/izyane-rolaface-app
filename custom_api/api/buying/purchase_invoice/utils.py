@@ -1,3 +1,5 @@
+import frappe
+
 def build_pi_filters(args):
 
     frappe_filters = {}
@@ -65,3 +67,44 @@ def map_pi_list_response(inv):
         "roundedTotal": rounded_total,
         "outstanding_amount": outstanding
     }
+
+def apply_advances(po_no, pi_doc):
+
+    # Fetch Payment Entry references linked to PO
+    pe_references = frappe.get_all(
+        "Payment Entry Reference",
+        filters={
+            "reference_doctype": "Purchase Order",
+            "reference_name": po_no,
+        },
+        fields=["name", "parent", "allocated_amount", "exchange_rate"],
+    )
+
+    remaining_to_allocate = float(pi_doc.outstanding_amount or pi_doc.grand_total or 0)
+
+    for ref in pe_references:
+        if remaining_to_allocate <= 0:
+            break
+
+        available_advance = float(ref.get("allocated_amount") or 0)
+
+        if available_advance <= 0:
+            continue
+
+        # Correct allocation logic
+        allocate = min(remaining_to_allocate, available_advance)
+
+        pi_doc.append("advances",{
+            # "doctype": "Purchase Invoice Advance",
+            "reference_type": "Payment Entry",
+            "reference_name": ref["parent"],
+            "advance_amount": available_advance,
+            "allocated_amount": allocate,
+            # "parentfield": "advances",
+            # "parenttype": "Purchase Invoice",
+            "reference_row": ref["name"],
+            "ref_exchange_rate": ref["exchange_rate"],
+            "remarks": f"Advance settled against LPO {po_no}",
+        })
+
+        remaining_to_allocate = round(remaining_to_allocate - allocate, 2)
