@@ -351,7 +351,7 @@ def get_sales_invoices(filters=None, page=1, page_size=20, search=None):
         inv["customerName"] = inv.pop("customer_name")
         inv["invoiceDate"] = inv.pop("posting_date")
         inv["dueDate"] = inv.pop("due_date")
-        inv["total"] = inv.pop("base_grand_total")
+        inv["total"] = inv.pop("grand_total")
         inv["baseGrandTotal"] = inv.pop("base_grand_total")
         inv["exchangeRate"] = inv.pop("conversion_rate")
         inv["outstandingAmount"] = inv.pop("outstanding_amount")
