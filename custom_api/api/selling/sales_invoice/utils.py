@@ -2,6 +2,7 @@ import frappe
 from typing import Dict, Any
 import json
 from frappe.utils import flt, cint, add_days
+from erpnext.setup.utils import get_exchange_rate
 
 
 def validate_sales_invoice_payload(data: Dict[str, Any], is_update=False):
@@ -48,6 +49,32 @@ def validate_sales_invoice_payload(data: Dict[str, Any], is_update=False):
             if total_percentage != 100:
                 raise frappe.ValidationError(
                     f"Total percentage of payment phases must equal 100. Currently: {total_percentage}"
+                )   
+    # company_currency = frappe.defaults.get_user_default("Currency")
+    # currency = data.get("currency") or company_currency
+
+    # if currency and currency != company_currency:
+    #     exchange_rate = data.get("exchangeRate")
+
+    #     if exchange_rate:
+    #         if float(exchange_rate) <= 0:
+    #             raise frappe.ValidationError(
+    #                 "exchangeRate must be greater than 0."
+    #             )
+    #     else:
+    #         try:
+    #             rate = get_exchange_rate(
+    #                 currency,
+    #                 company_currency,
+    #                 posting_date,
+    #             )
+    #         except Exception:
+    #             rate = None
+
+    #         if not rate:
+    #             raise frappe.ValidationError(
+    #                 f"No exchange rate found for {currency} → {company_currency} on {posting_date}. "
+    #                 f"Please maintain Currency Exchange."
                 )
 
 
