@@ -32,7 +32,7 @@ def create_po_service(data):
         "tax_category": data.get("taxCategory"),
         "project": data.get("project"),
         "cost_center": data.get("costCenter"),
-        "incoterm": data.get("incoterms"),
+        "incoterm": data.get("incoterm"),
         "contact_person": data.get("contactPerson"),
     })
     
@@ -81,7 +81,7 @@ def update_po_service(po_id, data):
     po_doc.tax_category = data.get("taxCategory")
     po_doc.project = data.get("project")
     po_doc.cost_center = data.get("costCenter")
-    po_doc.incoterms = data.get("incoterms")
+    po_doc.incoterm = data.get("incoterm")
     po_doc.contact_person = data.get("contactPerson","")
 
     po_doc.set("items", [])
