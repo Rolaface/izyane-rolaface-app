@@ -219,10 +219,6 @@ def update_pi_service(pi_id, data):
         pi_doc.tc_name = terms
         pi_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
 
-    pi_doc.payment_terms_template = f"{pi_doc.name} Buying PT"
-    pi_doc.tc_name = terms
-
-
     pi_doc.run_method("set_missing_values")
     pi_doc.run_method("calculate_taxes_and_totals")
 
