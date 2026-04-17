@@ -110,9 +110,9 @@ def update():
         update_pi_service(pi_id, data)
         return send_old_response(
             status="success",
-            message="Purchase Order updated successfully",
-            status_code=201,
-            http_status=201
+            message="Purchase Invoice updated successfully",
+            status_code=200,
+            http_status=200
         )
 
     except Exception as e:
