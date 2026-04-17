@@ -296,7 +296,8 @@ def get_bank_account_by_mode_of_payment():
 def update():
     data = frappe.request.get_json()
 
-    bank_account_id = data.get("bankAccountId")
+    bank_account_id = frappe.request.args.get("id")
+
     if not bank_account_id:
         return send_old_response(status="fail", message="'bankAccountId' is required.", data=None, status_code=400, http_status=400)
 
