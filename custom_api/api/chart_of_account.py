@@ -30,6 +30,15 @@ def _get_list_arg(key):
         return [item.strip() for item in val.split(",") if item.strip()]
     return [val]
 
+def rollup_balances(nodes):
+    for node in nodes:
+        if node.get("children"):
+            rollup_balances(node["children"])
+            # Sum children balances into parent
+            node["balance"] = round(
+                sum(child.get("balance", 0.0) for child in node["children"]), 2)
+    return nodes
+
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_chart_of_accounts():
     try:
@@ -134,7 +143,7 @@ def get_chart_of_accounts():
             return tree
 
         tree = build_tree(accounts)
-
+        rollup_balances(tree)
         return send_response(
             status="success",
             message="Chart of accounts fetched successfully.",
