@@ -117,9 +117,10 @@ def create_purchase_invoice_service(data):
 
 def get_purchase_invoice_by_id(pi_id):
     pi_doc = frappe.get_doc("Purchase Invoice", pi_id)
-    po_items = []
+    pi_items = []
+    purchase_order = None
     for item in pi_doc.items:
-
+        purchase_order = item.purchase_order
         item_meta = frappe.db.get_value(
             "Custom Item Details",
             {"parent": item.item_code},
@@ -135,8 +136,8 @@ def get_purchase_invoice_by_id(pi_id):
                 ["manufacturing_date", "expiry_date"],
                 as_dict=True,
             )
-
-        po_items.append({
+        description = frappe.get_value("Item", item.item_code,["description"])
+        pi_items.append({
             "itemCode": item.item_code,
             "itemName": item.item_name,
             "quantity": item.qty,
@@ -148,7 +149,8 @@ def get_purchase_invoice_by_id(pi_id):
             "packingUnit": str(item_meta.get("packing_unit")) if item_meta else "",
             "packingSize": str(item_meta.get("packing_size")) if item_meta else "",
             "mfgDate": batch_info.manufacturing_date if batch_info else "",
-            "expDate": batch_info.expiry_date if batch_info else ""
+            "expDate": batch_info.expiry_date if batch_info else "",
+            "description": description
         })
 
     return {
@@ -170,7 +172,7 @@ def get_purchase_invoice_by_id(pi_id):
         "costCenter": pi_doc.cost_center,
         "incoterms": pi_doc.incoterm,
         "terms": get_linked_terms(pi_doc.name, "buying"),
-        "items": po_items,
+        "items": pi_items,
         "totalTaxes": pi_doc.total_taxes_and_charges,
         "grandTotal": pi_doc.grand_total,
         "roundedTotal": pi_doc.rounded_total,
@@ -179,7 +181,8 @@ def get_purchase_invoice_by_id(pi_id):
         "paymentType": pi_doc.custom_invoice_metadata[0].payment_mode if pi_doc.custom_invoice_metadata else None,
         "spplrInvcNo": pi_doc.bill_no,
         "spplrInvcDt": str(pi_doc.bill_date) if pi_doc.bill_date else None,
-        "updateStock": pi_doc.update_stock
+        "updateStock": pi_doc.update_stock,
+        "poNumber": purchase_order
     }
 
 def update_pi_service(pi_id, data):
