@@ -143,6 +143,7 @@ def create_pi_from_po():
         pi_doc.docstatus = 0
         pi_doc.allocate_advances_automatically = 1
         pi_doc.only_include_allocated_payments = 1
+        pi_doc.update_stock = 1
         pi_doc.insert(ignore_permissions=True)
 
         return send_old_response(
