@@ -89,7 +89,7 @@ def create_purchase_invoice_service(data):
         "supplier_address": data.get("supplier_address"),
         "dispatch_address": data.get("dispatch_address"),
 
-        "items": build_items(data.get("items"), data.get("supplierId")),
+        "items": build_items(data.get("items"), data.get("supplierId"), data.get("lpoNumber")),
         "custom_invoice_metadata": [{"payment_mode": data.get("paymentType")}]
     })
     pi_doc.run_method("set_missing_values")
@@ -182,7 +182,7 @@ def get_purchase_invoice_by_id(pi_id):
         "spplrInvcNo": pi_doc.bill_no,
         "spplrInvcDt": str(pi_doc.bill_date) if pi_doc.bill_date else None,
         "updateStock": pi_doc.update_stock,
-        "poNumber": purchase_order
+        "lpoNumber": purchase_order
     }
 
 def update_pi_service(pi_id, data):

@@ -12,7 +12,7 @@ def _to_list(value):
 def _get_supplier_category(supplier):
     return frappe.db.get_value("Supplier", supplier, "tax_category") or ""
 
-def build_items(items, supplier):
+def build_items(items, supplier, po_number = None):
 
     po_items = []
     supplier_category = _get_supplier_category(supplier)
@@ -44,6 +44,8 @@ def build_items(items, supplier):
 
         if batch_no:
             item_dict["batch_no"] = batch_no
+        if po_number:
+            item_dict["purchase_order"] = po_number
 
         po_items.append(item_dict)
 
