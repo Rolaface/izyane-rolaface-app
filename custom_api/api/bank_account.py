@@ -291,3 +291,97 @@ def get_bank_account_by_mode_of_payment():
         status_code=200,
         http_status=200
     )
+
+@frappe.whitelist(allow_guest=False, methods=["PUT"])
+def update():
+    data = frappe.request.get_json()
+
+    bank_account_id = data.get("bankAccountId")
+    if not bank_account_id:
+        return send_old_response(status="fail", message="'bankAccountId' is required.", data=None, status_code=400, http_status=400)
+
+    if not frappe.db.exists("Bank Account", bank_account_id):
+        return send_old_response(status="fail", message=f"Bank Account '{bank_account_id}' does not exist.", data=None, status_code=404, http_status=404)
+
+    bank = data.get("bankName")
+    account_number = data.get("accountNo")
+    # branch_address = data.get("branchAddress")
+    currency = data.get("currency")
+    branch_code = data.get("sortCode")
+    iban = data.get("iban")
+    account_holder_name = data.get("accountHolderName")
+    last_integration_date = data.get("dateAdded")
+    accountFor = data.get("accountFor")
+    reporting_account = data.get("reportingAccount")
+    party = data.get("partyName")
+    isDefault = data.get("isDefault")
+    isDisabled = data.get("isDisabled")
+
+    # ── Validations ───────────────────────────────────────────────────────────
+    if bank and not frappe.db.exists("Bank", bank):
+        return send_old_response(status="fail", message=f"Bank '{bank}' does not exist.", data=None, status_code=404, http_status=404)
+
+    # If account number is being changed, ensure it doesn't conflict with another account
+    if account_number:
+        existing = frappe.db.get_value("Bank Account", {"bank_account_no": account_number}, "name")
+        if existing and existing != bank_account_id:
+            return send_old_response(
+                status="fail",
+                message=f"Bank Account with number '{account_number}' already exists.",
+                data=None, status_code=409, http_status=409
+            )
+
+    # If accountFor is being changed, party must be provided for non-company
+    if accountFor and accountFor != "Company" and not party:
+        return send_old_response(status="fail", message="Party Name is required.", data=None, status_code=400, http_status=400)
+
+    # If reporting account is being changed, ensure it's not used by another account
+    if reporting_account:
+        existing_reporting = frappe.db.get_value("Bank Account", {"account": reporting_account}, "name")
+        if existing_reporting and existing_reporting != bank_account_id:
+            return send_old_response(
+                status="fail",
+                message=f"{reporting_account} reporting account is already used by another account.",
+                data=None, status_code=400, http_status=400
+            )
+    try:
+        bank_account = frappe.get_doc("Bank Account", bank_account_id)
+
+        bank_account.account_name = account_holder_name
+        bank_account.bank = bank
+        bank_account.bank_account_no = account_number
+        bank_account.currency = currency
+        # bank_account.branch_address =  branch_address
+        bank_account.branch_code = branch_code
+        bank_account.iban = iban
+        bank_account.last_integration_date = last_integration_date
+        bank_account.account = reporting_account
+        bank_account.is_default = isDefault
+        bank_account.disabled = isDisabled
+
+        # Handle accountFor change
+        if accountFor is not None:
+            is_company_account = 1 if accountFor == "Company" else 0
+            bank_account.is_company_account = is_company_account
+            bank_account.company = frappe.defaults.get_user_default("Company") if accountFor == "Company" else bank_account.company
+            bank_account.party_type = accountFor if accountFor != "Company" else None
+            bank_account.party = party if accountFor != "Company" else None
+
+        bank_account.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return send_old_response(
+            status="success",
+            message="Bank Account updated successfully.",
+            data={"bank_account_id": bank_account.name},
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Update Bank Account Fail")
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            data=None, status_code=500, http_status=500
+        )
