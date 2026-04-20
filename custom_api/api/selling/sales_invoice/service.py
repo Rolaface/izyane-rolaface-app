@@ -202,7 +202,7 @@ def get_sales_invoice_by_id(invoice_id):
         payment_mode,
         invoice.company
     )
-    data["paymentMode"] = custom_details[0].payment_mode
+    data["paymentMode"] = custom_details[0].payment_mode if custom_details else None
     for item in invoice.items:
         tax = _get_tax(item.item_code, invoice.tax_category)
 
