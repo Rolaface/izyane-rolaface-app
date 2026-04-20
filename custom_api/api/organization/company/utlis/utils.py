@@ -24,7 +24,19 @@ def build_company_response(company):
             "authorizedSignatureUrl": company.custom_company_signature or ""
         },
         "address": addresses[0] if addresses else None, # Assuming one address per company for now, can be extended to support multiple addresses in the future
-        "terms": terms
+        "terms": terms,
+        "accountingSetup": {
+                "chartOfAccounts": company.chart_of_accounts or "",
+                "defaultExpenseGL": company.default_expense_account or "",
+                "fxGainLossAccount": company.exchange_gain_loss_account or "",
+                "roundOffAccount": company.round_off_account or "",
+                "roundOffCostCenter": company.round_off_cost_center or "",
+                "accumulatedDepreciationAccount": company.accumulated_depreciation_account or "",
+                "depreciationExpenseAccount": company.depreciation_expense_account,
+                "revaluationFrequency"          : company.auto_err_frequency or "", 
+                "autoExchangeRateRevaluation"   : company.auto_exchange_rate_revaluation or 0,
+                "unrealizedExchangeGainLossAccount": company.unrealized_exchange_gain_loss_account or "",
+            },
     }
 
 def map_company_update_fields(company, data):
