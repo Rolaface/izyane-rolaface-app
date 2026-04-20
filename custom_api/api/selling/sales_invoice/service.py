@@ -171,7 +171,9 @@ def get_sales_invoice_by_id(invoice_id):
         "tax_category": invoice.tax_category,
         "updateStock": bool(invoice.update_stock),
         "warehouse": invoice.set_warehouse,
+        "customerAddressId": invoice.customer_address,
         "billingAddress": invoice.address_display,
+        "shippingAddressId": invoice.shipping_address_name,
         "shippingAddress": invoice.shipping_address,
         "salesTaxTemplate": invoice.taxes_and_charges,
         "status": invoice.status,
@@ -200,7 +202,7 @@ def get_sales_invoice_by_id(invoice_id):
         payment_mode,
         invoice.company
     )
-
+    data["paymentMode"] = custom_details[0].payment_mode
     for item in invoice.items:
         tax = _get_tax(item.item_code, invoice.tax_category)
 
