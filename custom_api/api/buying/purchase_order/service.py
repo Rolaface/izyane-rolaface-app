@@ -129,7 +129,7 @@ def get_po_list(filters=None, page=1, page_size=10, search=""):
         "Purchase Order",
         filters=filters,
         or_filters=or_filters if search else None,
-        fields=["name", "supplier", "transaction_date", "schedule_date", "grand_total", "status", "shipping_rule"],
+        fields=["name", "supplier", "transaction_date", "schedule_date", "grand_total", "status", "shipping_rule", "currency"],
         limit_start=limit_start,
         limit_page_length=page_size,
         order_by="creation desc"
