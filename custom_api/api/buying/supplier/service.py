@@ -4,7 +4,7 @@ from ....utils.party_utils import (
     get_linked_addresses, get_linked_contacts, get_linked_terms,
     unlink_and_disable_docs
 )
-
+from erpnext.accounts.utils import get_balance_on
 
 def create_supplier(data):
     doc_args = {
@@ -87,7 +87,7 @@ def get_suppliers(page, page_size):
     start = (page - 1) * page_size
     total_suppliers = frappe.db.count("Supplier")
     total_pages = (total_suppliers + page_size - 1) // page_size
-
+    company = frappe.defaults.get_user_default("Company")
     suppliers = frappe.get_all(
         "Supplier",
         fields=["name", "supplier_name", "supplier_type", "supplier_group", "tax_id", "default_currency", "tax_category", "disabled"],
@@ -95,6 +95,10 @@ def get_suppliers(page, page_size):
     )
 
     for s in suppliers:
+        outstanding_amount = get_balance_on(party_type='Supplier',party=s.name,
+                                                 date=frappe.utils.nowdate(),company=company
+                                                )
+        s["outStandingAmount"] =  -outstanding_amount     #@TODO: Need to test with multiple currency
         s["id"] = s.pop("name")
         s["name"] = s.pop("supplier_name")
         s["tpin"] = s.pop("tax_id")
