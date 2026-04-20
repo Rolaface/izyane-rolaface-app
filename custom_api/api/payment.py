@@ -277,7 +277,7 @@ def create_payment_entry():
                     status_code=400,
                     http_status=400
                 )
-        if (paid_from_currency == paid_to_currency) and exchange_rate <=1:
+        if (paid_from_currency == paid_to_currency) and (paid_from_currency != company_currency):
             exchange_rate = get_exchange_rate(from_currency = paid_from_currency, to_currency = company_currency, transaction_date = payment_date)
             if exchange_rate < 1:
                 frappe.throw(f"Unable to find exchange rate for {paid_from_currency} to {paid_to_currency} for key date {payment_date}. Please create a Currency Exchange record manually")
