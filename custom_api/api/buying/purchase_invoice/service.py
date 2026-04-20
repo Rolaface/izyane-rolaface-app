@@ -64,7 +64,7 @@ def create_purchase_invoice_service(data):
 
     company = frappe.defaults.get_user_default("Company")
     currency = data.get("currency", frappe.defaults.get_user_default("currency"))
-    account = validate_receivable_account_for_currency(currency, "Payable")
+    account = validate_receivable_account_for_currency(currency, "Payable", "Liability")
 
     pi_doc = frappe.get_doc({
         "doctype": "Purchase Invoice",
