@@ -1,6 +1,6 @@
 from custom_api.utils.response import send_old_response, send_response_list
 import frappe
-from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+from erpnext.setup.utils import get_exchange_rate
 from custom_api.utils.response import send_response
 from frappe.desk.search import search_widget
 
@@ -277,7 +277,10 @@ def create_payment_entry():
                     status_code=400,
                     http_status=400
                 )
-
+        if (paid_from_currency == paid_to_currency) and exchange_rate <=1:
+            exchange_rate = get_exchange_rate(from_currency = paid_from_currency, to_currency = company_currency, transaction_date = payment_date)
+            if exchange_rate < 1:
+                frappe.throw(f"Unable to find exchange rate for {paid_from_currency} to {paid_to_currency} for key date {payment_date}. Please create a Currency Exchange record manually")
         # ── Create Payment Entry ──────────────────────────────────────────────
         pe = frappe.new_doc("Payment Entry")
         pe.payment_type               = payment_type
