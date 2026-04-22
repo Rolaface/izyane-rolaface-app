@@ -192,11 +192,11 @@ def sync_invoice_terms(invoice, terms_payload):
 
 def sync_taxes(invoice, data):
     invoice.set("taxes", [])
-    
+
     default_cc = invoice.cost_center or frappe.get_cached_value("Company", invoice.company, "cost_center")
     existing_heads = set()
     is_dirty = False
-    
+
     template_name = data.get("salesTaxTemplate") or invoice.taxes_and_charges
     if template_name and frappe.db.exists("Sales Taxes and Charges Template", template_name):
         template = frappe.get_cached_doc("Sales Taxes and Charges Template", template_name)
@@ -211,7 +211,7 @@ def sync_taxes(invoice, data):
             })
             existing_heads.add(t_row.account_head)
             is_dirty = True
-            
+
     for item in invoice.get("items", []):
         if item.item_tax_template:
             item_tax_doc = frappe.get_cached_doc("Item Tax Template", item.item_tax_template)
@@ -230,22 +230,43 @@ def sync_taxes(invoice, data):
 
     tax_overrides = data.get("taxes", [])
     if tax_overrides:
-        override_map = {t.get("accountHead"): t for t in tax_overrides if t.get("accountHead")}
+        override_map = {
+            t.get("accountHead"): t for t in tax_overrides if t.get("accountHead")
+        }
+
         for tax_row in invoice.get("taxes", []):
             override = override_map.get(tax_row.account_head)
-            if override:
-                if "amount" in override and override["amount"] is not None:
+            if not override:
+                continue
+
+            charge_type = override.get("chargeType") or override.get("charge_type")
+
+            amount = override.get("amount")
+            rate = override.get("rate")
+
+            if charge_type == "Actual" and rate is not None:
+                frappe.throw(f"{tax_row.account_head}: 'Actual' cannot have rate")
+
+            if charge_type and charge_type != "Actual" and amount is not None:
+                frappe.throw(f"{tax_row.account_head}: Only 'Actual' can have amount")
+
+            if charge_type:
+                tax_row.charge_type = charge_type
+
+            if amount is not None:
+                tax_row.tax_amount = flt(amount)
+                tax_row.rate = 0
+                if not charge_type:
                     tax_row.charge_type = "Actual"
-                    tax_row.rate = 0
-                    tax_row.tax_amount = flt(override["amount"])
-                    is_dirty = True
-                elif "rate" in override and override["rate"] is not None:
-                    if tax_row.charge_type == "Actual":
-                        tax_row.charge_type = "On Net Total"
-                    tax_row.rate = flt(override["rate"])
-                    tax_row.tax_amount = 0
-                    is_dirty = True
-                    
+                is_dirty = True
+
+            elif rate is not None:
+                tax_row.rate = flt(rate)
+                tax_row.tax_amount = 0
+                if not charge_type and tax_row.charge_type == "Actual":
+                    tax_row.charge_type = "On Net Total"
+                is_dirty = True
+
     return is_dirty
 
 
