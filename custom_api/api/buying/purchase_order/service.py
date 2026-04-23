@@ -129,7 +129,7 @@ def get_po_list(filters=None, page=1, page_size=10, search=""):
         "Purchase Order",
         filters=filters,
         or_filters=or_filters if search else None,
-        fields=["name", "supplier", "transaction_date", "schedule_date", "grand_total", "status", "shipping_rule", "currency"],
+        fields=["name", "supplier_name", "transaction_date", "schedule_date", "grand_total", "status", "shipping_rule", "currency"],
         limit_start=limit_start,
         limit_page_length=page_size,
         order_by="creation desc"
@@ -137,7 +137,7 @@ def get_po_list(filters=None, page=1, page_size=10, search=""):
 
     for po in pos:
         po["poId"] = po.pop("name")
-        po["supplierName"] = po.pop("supplier")
+        po["supplierName"] = po.pop("supplier_name")
         po["poDate"] = str(po.pop("transaction_date")) if po.get("transaction_date") else None
         po["deliveryDate"] = str(po.pop("schedule_date")) if po.get("schedule_date") else None
         po["grandTotal"] = po.pop("grand_total")

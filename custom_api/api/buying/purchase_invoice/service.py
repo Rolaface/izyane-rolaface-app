@@ -21,7 +21,7 @@ def get_purchase_invoice_list(filters=None, page=1, page_size=10, search=""):
         filters=filters,
         fields=[
             "name",
-            "supplier",
+            "supplier_name as supplier",
             "posting_date",
             "due_date",
             "grand_total",
