@@ -25,6 +25,7 @@ def map_to_frappe_item(data: dict, brand: str) -> dict:
         "valuation_method": data.get("inventoryInfo", {}).get("valuationMethod") or "FIFO",
         "has_batch_no": 1 if data.get("batchInfo", {}).get("has_batch_no") else 0,
         "has_expiry_date": 1 if data.get("batchInfo", {}).get("has_expiry_date") else 0,
+        "shelf_life_in_days": int(data.get("batchInfo", {}).get("shelfLife") or 0),
         
         "country_of_origin": data.get("countryOfOrigin") or "",
 
@@ -252,6 +253,8 @@ def _update_basic_fields(item_doc, data, brand):
 
     item_doc.has_batch_no = 1 if batch_info.get("has_batch_no") else 0
     item_doc.has_expiry_date = 1 if batch_info.get("has_expiry_date") else 0
+    item_doc.shelf_life_in_days = int(
+    data.get("batchInfo", {}).get("shelfLife") or 0)
 
 def _update_uom(item_doc, data):
 
