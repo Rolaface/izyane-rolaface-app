@@ -96,6 +96,10 @@ def validate_item_payload(data):
     if data.get("buyingPrice") and float(data.get("buyingPrice")) < 0:
         frappe.throw("Buying price cannot be negative")
 
+    batch_info = data.get("batchInfo", {})
+    if batch_info.get("has_expiry_date") and not batch_info.get("shelfLife"):
+        frappe.throw("Shelf life is required when expiry tracking is enabled")
+
 def map_item_response(item, tax_category=None):
 
     # Prices
@@ -147,7 +151,9 @@ def map_item_response(item, tax_category=None):
         "batchInfo": {
             "has_batch_no": bool(item.has_batch_no),
             "has_expiry_date": bool(item.has_expiry_date),
+            "shelfLife": item.shelf_life_in_days or 0
         }
+        
     }
 
 def _get_price(item_code, price_list):
