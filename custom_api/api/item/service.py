@@ -46,7 +46,7 @@ def get_items_service(params):
             "valuation_method",
             "has_batch_no",
             "has_expiry_date",
-            "shelf_life_in_days"
+            "shelf_life_in_days",
             "country_of_origin"
         ],
         limit_start=(current_page - 1) * page_size,
