@@ -186,6 +186,7 @@ def get_po_by_id(po_id):
             "rate": item.rate,
             "requiredBy": str(item.schedule_date) if item.schedule_date else None,
             "warehouse": item.warehouse,
+            "shelfLife": item.shelf_life_in_days or 0,
             "uom": item.uom,
             # "itemTaxTemplate": item.item_tax_template,
             "taxInfo": tax,
