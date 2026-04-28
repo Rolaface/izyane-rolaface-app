@@ -267,15 +267,17 @@ def get_sales_invoice_by_id(invoice_id):
                 "accountHead": tax.account_head,
                 "rate": tax.rate,
                 "amount": amount,
+                "description": tax.description,
             }
             data["taxes"].append(row)
             total_tax += amount
 
         else:
             row = {
-                "accountHead": tax.description,
+                "accountHead": tax.account_head,
                 "rate": tax.rate,
                 "amount": amount,
+                "description": tax.description,
             }
             data["charges"].append(row)
             total_charges += amount

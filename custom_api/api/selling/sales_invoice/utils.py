@@ -243,6 +243,7 @@ def sync_taxes(invoice, data):
 
             amount = override.get("amount")
             rate = override.get("rate")
+            description = override.get("description")
 
             if charge_type == "Actual" and rate is not None:
                 frappe.throw(f"{tax_row.account_head}: 'Actual' cannot have rate")
@@ -252,6 +253,10 @@ def sync_taxes(invoice, data):
 
             if charge_type:
                 tax_row.charge_type = charge_type
+            
+            if description is not None:
+                tax_row.description = description
+                is_dirty = True
 
             if amount is not None:
                 tax_row.tax_amount = flt(amount)
