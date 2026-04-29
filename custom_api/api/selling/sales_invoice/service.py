@@ -258,13 +258,20 @@ def get_sales_invoice_by_id(invoice_id):
     for tax in invoice.get("taxes", []):
         amount = tax.tax_amount or 0
 
-        account_type = frappe.get_cached_value(
-            "Account", tax.account_head, "account_type"
+        account = frappe.get_cached_value(
+            "Account",
+            tax.account_head,
+            ["account_type", "account_name"],
+            as_dict=True,
         )
+
+        account_type = account.account_type if account else None
+        account_name = account.account_name if account else None
 
         if account_type == "Tax":
             row = {
                 "accountHead": tax.account_head,
+                "accountName": account_name,
                 "rate": tax.rate,
                 "amount": amount,
                 "description": tax.description,
@@ -275,6 +282,7 @@ def get_sales_invoice_by_id(invoice_id):
         else:
             row = {
                 "accountHead": tax.account_head,
+                "accountName": account_name,
                 "rate": tax.rate,
                 "amount": amount,
                 "description": tax.description,
