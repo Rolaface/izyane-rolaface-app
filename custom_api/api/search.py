@@ -221,7 +221,7 @@ def get_locations():
         return send_response("fail",str(e),None,500,500)
     
 @frappe.whitelist(allow_guest=False, methods=["GET"])
-def get_Items():
+def get_items():
     try:
         filters = frappe._dict({})
 
