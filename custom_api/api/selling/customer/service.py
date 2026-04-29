@@ -82,6 +82,7 @@ def get_customer_by_id(customer_id):
         "email": customer.email_id,
         "customerGroup": customer.customer_group,
         "customerTaxCategory": customer.tax_category,
+        "status": "Active" if not customer.disabled else "Inactive",
         "contacts": get_linked_contacts("Customer", customer_id),
         "addresses": get_linked_addresses("Customer", customer_id),
         "terms": get_linked_terms(customer_id, "selling")
