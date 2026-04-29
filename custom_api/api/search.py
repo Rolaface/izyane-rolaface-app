@@ -201,6 +201,54 @@ def get_suppliers():
         return send_response("fail",str(e),None,500,500)
     
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_locations():
+    try:
+        data = _fetch_paginated_autosuggest(
+            doctype="Location",
+            filters=frappe._dict({}),
+            search_fields=["name", "location_name"],
+            field_map={
+                "value": "name",
+                "label": "location_name",
+                "description": "name",
+            },
+        )
+
+        return send_response_list("success","Locations fetched successfully.",data,)
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(),"Get Locations API Error")
+        return send_response("fail",str(e),None,500,500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_Items():
+    try:
+        filters = frappe._dict({})
+
+        is_fixed_asset = frappe.request.args.get("is_fixed_asset")
+        if is_fixed_asset is not None:
+            filters["is_fixed_asset"] = int(is_fixed_asset)
+
+        data = _fetch_paginated_autosuggest(
+            doctype="Item",
+            filters=filters,
+            search_fields=["name", "item_name"],
+            field_map={
+                "value": "name",
+                "label": "item_name",
+                "description": "name",
+            },
+        )
+
+        return send_response_list(
+            "success", "Item Codes fetched successfully.", data
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Item Codes API Error")
+        return send_response("fail", str(e), None, 500, 500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_suppliers_group():
     try:
         data = _fetch_paginated_autosuggest(
