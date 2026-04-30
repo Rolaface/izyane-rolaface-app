@@ -221,6 +221,26 @@ def get_locations():
         return send_response("fail",str(e),None,500,500)
     
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+def get_employees():
+    try:
+        data = _fetch_paginated_autosuggest(
+            doctype="Employee",
+            filters=frappe._dict({}),
+            search_fields=["name", "employee_name"],
+            field_map={
+                "value": "name",
+                "label": "employee_name",
+                "description": "name",
+            },
+        )
+
+        return send_response_list("success","Employees fetched successfully.",data,)
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(),"Get Employees API Error")
+        return send_response("fail",str(e),None,500,500)
+    
+@frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_items():
     try:
         filters = frappe._dict({})
