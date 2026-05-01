@@ -120,7 +120,7 @@ def get():
         ]
 
     fields = [
-        "name", "account_name as accountHolderName", "bank as bankName", "bank_account_no as accountNo",
+        "name as id", "account_name as accountHolderName", "bank as bankName", "bank_account_no as accountNo",
         "branch_code as sortCode", "iban",
         "is_company_account", "is_default as isDefault", "disabled as isDisabled",
         "party_type as accountFor", "party as partyName", "company",
@@ -154,6 +154,7 @@ def get():
         currency_map = {a["name"]: a["currency"] for a in account_records}
 
     for ba in bank_accounts:
+        ba["name"] = f"{ba["accountHolderName"]} - {ba["bankName"]}"
         if ba.get("is_company_account"):
             ba["currency"] = currency_map.get(ba.get("ledgerAccount"))
 
