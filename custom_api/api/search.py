@@ -480,7 +480,7 @@ def get_party_details(party_type, party, cost_center=None):
             "party_name": party_name,
             "party": {
                         "id": party_bank_account,
-                        "name": f"{party_bank_account_details["account_name"]} - {party_bank_account_details["bank"]}"
+                        "name": f"{party_bank_account_details["account_name"]} - {party_bank_account_details["bank"]}" if party_bank_account_details else None
                     },
             "party_account_currency": account_currency,
             # "party_bank_account": party_bank_account,
