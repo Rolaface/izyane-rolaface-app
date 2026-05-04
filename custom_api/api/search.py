@@ -408,7 +408,7 @@ def parties_and_accounts():
 def get_party_details(party_type, party, cost_center=None):
     company_default_bank_account = ""
     party_bank_account = ""
-    company_account_ledger = company_account_ledger_currency = ""
+    company_account_ledger = company_account_ledger_currency = party_bank_account_details = ""
 
     company = frappe.defaults.get_user_default("Company")
     company_currency = frappe.defaults.get_user_default("Currency")
@@ -436,7 +436,7 @@ def get_party_details(party_type, party, cost_center=None):
             company_account_ledger = frappe.get_cached_value(
                 "Bank Account",
                 company_default_bank_account,
-                ["account", "bank", "bank_account_no"],
+                ["account", "bank", "bank_account_no", "account_name"],
                 as_dict=1,
             )
             company_account_ledger_currency = (
@@ -446,6 +446,13 @@ def get_party_details(party_type, party, cost_center=None):
                 if company_account_ledger["account"]
                 else None
             )
+        if party_bank_account:
+            party_bank_account_details = frappe.get_cached_value(
+                                            "Bank Account",
+                                            company_default_bank_account,
+                                            ["bank", "account_name"],
+                                            as_dict=1,
+                                        )
     total_outstanding = 0
 
     if party_type == "Customer":
@@ -471,9 +478,18 @@ def get_party_details(party_type, party, cost_center=None):
         data={
             "party_ledger_account": party_account,
             "party_name": party_name,
+            "party": {
+                        "id": party_bank_account,
+                        "name": f"{party_bank_account_details["account_name"]} - {party_bank_account_details["bank"]}" if party_bank_account_details else None
+                    },
             "party_account_currency": account_currency,
-            "party_bank_account": party_bank_account,
-            "company_bank_account": company_default_bank_account,
+            # "party_bank_account": party_bank_account,
+            "company":{
+                        "id": company_default_bank_account,
+                        "name": f"{company_account_ledger["account_name"]} - {company_account_ledger["bank"]}" if company_account_ledger else None,
+                      },
+            # "company_bank_account_id": company_default_bank_account,
+            # "company_bank_account_display_name": f"{company_account_ledger["account_name"]} {company_account_ledger["bank"]}-{company_account_ledger_currency}",
             "company_account_ledger": company_account_ledger["account"] if company_account_ledger else None,
             "company_account_ledger_currency": company_account_ledger_currency,
             "company_default_currency": company_currency,
