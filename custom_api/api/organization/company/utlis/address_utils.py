@@ -35,6 +35,23 @@ def create_or_update_company_address(company, address_data):
     if not address_data:
         return
 
+    required_fields = {
+        "addressLine1": "Address Line 1",
+        "city":         "City/Town",
+        "country":      "Country",
+    }
+
+    missing = [
+        label
+        for field, label in required_fields.items()
+        if not address_data.get(field)
+    ]
+
+    if missing:
+        raise frappe.ValidationError(
+            f"Address is missing required fields: {', '.join(missing)}."
+        )
+
     # Find existing company address
     existing_address = frappe.db.get_value(
         "Dynamic Link",
