@@ -2,6 +2,7 @@ from custom_api.utils.response import send_old_response
 import frappe
 from frappe.utils import flt, cint, nowdate
 from frappe.query_builder.functions import Sum, Count
+from frappe.query_builder import Order
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def summary():
@@ -198,6 +199,121 @@ def dashboard_summary():
             http_status=500,
         )
 
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def notes():
+    try:
+        # 1. Setup Common Variables
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
+        
+        # Initialize DocTypes
+        si = frappe.qb.DocType("Sales Invoice")
+        pi = frappe.qb.DocType("Purchase Invoice")
+        sii = frappe.qb.DocType("Sales Invoice Item")
+
+        # ==========================================
+        # 2. Top Customer (By highest base_grand_total)
+        # ==========================================
+        top_customer_query = (
+            frappe.qb.from_(si)
+            .select(si.customer, Sum(si.base_grand_total).as_("total_sales"))
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+            .groupby(si.customer)
+            .orderby(Sum(si.base_grand_total), order=Order.desc)
+            .limit(1)
+        ).run(as_dict=True)
+
+        top_customer = top_customer_query[0] if top_customer_query else None
+
+        # ==========================================
+        # 3. Top Supplier (By highest base_grand_total)
+        # ==========================================
+        top_supplier_query = (
+            frappe.qb.from_(pi)
+            .select(pi.supplier, Sum(pi.base_grand_total).as_("total_purchases"))
+            .where(pi.docstatus == 1)
+            .where(pi.company == company)
+            .groupby(pi.supplier)
+            .orderby(Sum(pi.base_grand_total), order=Order.desc)
+            .limit(1)
+        ).run(as_dict=True)
+
+        top_supplier = top_supplier_query[0] if top_supplier_query else None
+
+        # ==========================================
+        # 4. Top Selling Item (By Quantity)
+        # ==========================================
+        top_item_qty_query = (
+            frappe.qb.from_(sii)
+            .inner_join(si).on(sii.parent == si.name)
+            .select(sii.item_code, sii.item_name, Sum(sii.qty).as_("total_qty"))
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+            .groupby(sii.item_code, sii.item_name)
+            .orderby(Sum(sii.qty), order=Order.desc)
+            .limit(1)
+        ).run(as_dict=True)
+
+        top_item_by_qty = top_item_qty_query[0] if top_item_qty_query else None
+
+        # ==========================================
+        # 5. Top Selling Value Item (By Base Amount)
+        # ==========================================
+        top_item_val_query = (
+            frappe.qb.from_(sii)
+            .inner_join(si).on(sii.parent == si.name)
+            .select(sii.item_code, sii.item_name, Sum(sii.base_amount).as_("total_value"))
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+            .groupby(sii.item_code, sii.item_name)
+            .orderby(Sum(sii.base_amount), order=Order.desc)
+            .limit(1)
+        ).run(as_dict=True)
+
+        top_item_by_value = top_item_val_query[0] if top_item_val_query else None
+
+        # ==========================================
+        # 6. Compile and Return Final Dictionary
+        # ==========================================
+        notes_data = {
+            "topCustomer": {
+                "name": top_customer.customer if top_customer else "N/A",
+                "value": flt(top_customer.total_sales) if top_customer else 0.0
+            },
+            "topSupplier": {
+                "name": top_supplier.supplier if top_supplier else "N/A",
+                "value": flt(top_supplier.total_purchases) if top_supplier else 0.0
+            },
+            "topSellingItemQty": {
+                "itemCode": top_item_by_qty.item_code if top_item_by_qty else "N/A",
+                "itemName": top_item_by_qty.item_name if top_item_by_qty else "N/A",
+                "quantity": flt(top_item_by_qty.total_qty) if top_item_by_qty else 0.0
+            },
+            "topSellingItemValue": {
+                "itemCode": top_item_by_value.item_code if top_item_by_value else "N/A",
+                "itemName": top_item_by_value.item_name if top_item_by_value else "N/A",
+                "value": flt(top_item_by_value.total_value) if top_item_by_value else 0.0
+            }
+        }
+
+        return send_old_response(
+            status="success",
+            message="Notes retrieved successfully.",
+            data=notes_data,
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Dashboard Notes API Error")
+        
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving notes: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
 
 
 
