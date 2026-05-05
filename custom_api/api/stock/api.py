@@ -20,6 +20,7 @@ def get_batch_wise_stock_report(
     company   = frappe.defaults.get_global_default("company")
     params    = frappe.request.args
     tax_category = params.get("taxCategory")
+    company_currency = frappe.defaults.get_user_default("Currency")
 
     # ── Step 1: Build SQL conditions ──────────────────────────────────────────
     conditions = [
@@ -221,7 +222,7 @@ def get_batch_wise_stock_report(
     for r in item_buy_rows:
         item_buy_map[r["item_code"]] = {
             "buy_value":    round(float(r["buy_value"] or 0), 2),
-            "buy_currency": r["currency"] or "INR",
+            "buy_currency": r["currency"] or company_currency,
         }
 
     # Batch-level buy  {(item_code, batch_no): {buy_value, buy_currency}}
@@ -245,7 +246,7 @@ def get_batch_wise_stock_report(
         key = (r["item_code"], r["batch_no"])
         batch_buy_map[key] = {
             "buy_value":    round(float(r["buy_value"] or 0), 2),
-            "buy_currency": r["currency"] or "INR",
+            "buy_currency": r["currency"] or company_currency,
         }
 
     # ── Actual sell value + currency from Sales Invoice ───────────────────────
@@ -268,7 +269,7 @@ def get_batch_wise_stock_report(
     for r in item_sell_rows:
         item_sell_map[r["item_code"]] = {
             "sell_value":    round(float(r["sell_value"] or 0), 2),
-            "sell_currency": r["currency"] or "INR",
+            "sell_currency": r["currency"] or company_currency,
         }
 
     # Batch-level sell  {(item_code, batch_no): {sell_value, sell_currency}}
@@ -292,7 +293,7 @@ def get_batch_wise_stock_report(
         key = (r["item_code"], r["batch_no"])
         batch_sell_map[key] = {
             "sell_value":    round(float(r["sell_value"] or 0), 2),
-            "sell_currency": r["currency"] or "INR",
+            "sell_currency": r["currency"] or company_currency,
         }
 
     # Build lookup maps  {(item_code, warehouse, batch_no): {qty, value}}
@@ -374,8 +375,8 @@ def get_batch_wise_stock_report(
 
         # buy_value/currency  = from Purchase Invoice (actual cost + currency)
         # sell_value/currency = from Sales Invoice   (actual revenue + currency)
-        buy_info  = item_buy_map.get(code,  {"buy_value":  in_value, "buy_currency":  "INR"})
-        sell_info = item_sell_map.get(code, {"sell_value": 0.0,      "sell_currency": "INR"})
+        buy_info  = item_buy_map.get(code,  {"buy_value":  in_value, "buy_currency":  company_currency})
+        sell_info = item_sell_map.get(code, {"sell_value": 0.0,      "sell_currency": company_currency})
 
         buy_value     = buy_info["buy_value"]
         buy_currency  = buy_info["buy_currency"]
@@ -502,8 +503,8 @@ def get_batch_wise_stock_report(
         tax_info     = _get_tax(item.name, tax_category)
 
         # ── Buy/sell values from invoices ─────────────────────────────────────
-        buy_info  = item_buy_map.get(code,  {"buy_value": 0.0, "buy_currency":  "INR"})
-        sell_info = item_sell_map.get(code, {"sell_value": 0.0, "sell_currency": "INR"})
+        buy_info  = item_buy_map.get(code,  {"buy_value": 0.0, "buy_currency":  company_currency})
+        sell_info = item_sell_map.get(code, {"sell_value": 0.0, "sell_currency": company_currency})
 
         items_map[code] = {
             "item_code":           code,
