@@ -47,7 +47,7 @@ def get_items_service(params):
             "has_batch_no",
             "has_expiry_date",
             "shelf_life_in_days",
-            "country_of_origin"
+            "country_of_origin",
             "is_sales_item",
             "is_stock_item",
             "is_purchase_item"
