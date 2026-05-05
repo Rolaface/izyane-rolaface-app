@@ -1,6 +1,6 @@
 from custom_api.utils.response import send_old_response
 import frappe
-from frappe.utils import flt, nowdate, cint
+from frappe.utils import flt, cint, nowdate
 from frappe.query_builder.functions import Sum, Count
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
@@ -81,84 +81,124 @@ def summary():
             http_status=500,
         )
 
+
 @frappe.whitelist(allow_guest=False, methods=["GET"])
-def sales_summary():
+def dashboard_summary():
     try:
-        # Get the default company for the logged-in user
+        # 1. Setup Common Variables
         company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
         today = nowdate()
 
-        # Initialize the DocType for Query Builder
         si = frappe.qb.DocType("Sales Invoice")
+        pi = frappe.qb.DocType("Purchase Invoice")
 
-        # 1. Fetch Total Sales Amount & Total Sales Count
+        # ==========================================
+        # 2. Sales Queries
+        # ==========================================
         sales_data = (
             frappe.qb.from_(si)
-            .select(
-                Sum(si.base_grand_total).as_("total_sales"),
-                Count(si.name).as_("sales_count")
-            )
-            .where(si.docstatus == 1)
-            .where(si.company == company)
+            .select(Sum(si.base_grand_total).as_("total"), Count(si.name).as_("count"))
+            .where(si.docstatus == 1).where(si.company == company)
         ).run(as_dict=True)
 
-        # 2. Fetch Total Outstanding Amount & Outstanding Invoice Count
-        outstanding_data = (
+        sales_outstanding_data = (
             frappe.qb.from_(si)
-            .select(
-                Sum(si.outstanding_amount * si.conversion_rate).as_("total_outstanding"),
-                Count(si.name).as_("outstanding_count")
-            )
-            .where(si.docstatus == 1)
-            .where(si.company == company)
-            .where(si.outstanding_amount > 0)
+            .select(Sum(si.outstanding_amount * si.conversion_rate).as_("total"), Count(si.name).as_("count"))
+            .where(si.docstatus == 1).where(si.company == company).where(si.outstanding_amount > 0)
         ).run(as_dict=True)
 
-        # 3. Fetch Total Overdue Amount & Overdue Invoice Count
-        overdue_data = (
+        sales_overdue_data = (
             frappe.qb.from_(si)
-            .select(
-                Sum(si.outstanding_amount).as_("total_overdue"),
-                Count(si.name).as_("overdue_count")
-            )
-            .where(si.docstatus == 1)
-            .where(si.company == company)
-            .where(si.due_date < today)
-            .where(si.outstanding_amount > 0)
+            .select(Sum(si.outstanding_amount * si.conversion_rate).as_("total"), Count(si.name).as_("count"))
+            .where(si.docstatus == 1).where(si.company == company)
+            .where(si.due_date < today).where(si.outstanding_amount > 0)
         ).run(as_dict=True)
 
-        # Safely extract float (flt) amounts and integer (cint) counts
-        total_sales = flt(sales_data[0].total_sales) if sales_data else 0.0
-        sales_count = cint(sales_data[0].sales_count) if sales_data else 0
-        
-        total_outstanding = flt(outstanding_data[0].total_outstanding) if outstanding_data else 0.0
-        outstanding_count = cint(outstanding_data[0].outstanding_count) if outstanding_data else 0
-        
-        total_overdue = flt(overdue_data[0].total_overdue) if overdue_data else 0.0
-        overdue_count = cint(overdue_data[0].overdue_count) if overdue_data else 0
+        # ==========================================
+        # 3. Purchase Queries
+        # ==========================================
+        purchase_data = (
+            frappe.qb.from_(pi)
+            .select(Sum(pi.base_grand_total).as_("total"), Count(pi.name).as_("count"))
+            .where(pi.docstatus == 1).where(pi.company == company)
+        ).run(as_dict=True)
+
+        purchase_outstanding_data = (
+            frappe.qb.from_(pi)
+            .select(Sum(pi.outstanding_amount * pi.conversion_rate).as_("total"), Count(pi.name).as_("count"))
+            .where(pi.docstatus == 1).where(pi.company == company).where(pi.outstanding_amount > 0)
+        ).run(as_dict=True)
+
+        purchase_overdue_data = (
+            frappe.qb.from_(pi)
+            .select(Sum(pi.outstanding_amount * pi.conversion_rate).as_("total"), Count(pi.name).as_("count"))
+            .where(pi.docstatus == 1).where(pi.company == company)
+            .where(pi.due_date < today).where(pi.outstanding_amount > 0)
+        ).run(as_dict=True)
+
+        # ==========================================
+        # 4. Customer & Supplier Queries
+        # ==========================================
+        total_customers = frappe.db.count("Customer")
+        active_customers = frappe.db.count("Customer", {"disabled": 0})
+        inactive_customers = frappe.db.count("Customer", {"disabled": 1})
+
+        total_suppliers = frappe.db.count("Supplier")
+        active_suppliers = frappe.db.count("Supplier", {"disabled": 0})
+        inactive_suppliers = frappe.db.count("Supplier", {"disabled": 1})
+
+        # ==========================================
+        # 5. Compile and Return Final Dictionary
+        # ==========================================
+        summary_data = {
+            "sales": {
+                "totalSales": flt(sales_data[0].total) if sales_data else 0.0,
+                "salesCount": cint(sales_data[0].count) if sales_data else 0,
+                "totalOutstanding": flt(sales_outstanding_data[0].total) if sales_outstanding_data else 0.0,
+                "outstandingCount": cint(sales_outstanding_data[0].count) if sales_outstanding_data else 0,
+                "totalOverdue": flt(sales_overdue_data[0].total) if sales_overdue_data else 0.0,
+                "overdueCount": cint(sales_overdue_data[0].count) if sales_overdue_data else 0
+            },
+            "purchase": {
+                "totalPurchase": flt(purchase_data[0].total) if purchase_data else 0.0,
+                "purchaseCount": cint(purchase_data[0].count) if purchase_data else 0,
+                "totalOutstanding": flt(purchase_outstanding_data[0].total) if purchase_outstanding_data else 0.0,
+                "outstandingCount": cint(purchase_outstanding_data[0].count) if purchase_outstanding_data else 0,
+                "totalOverdue": flt(purchase_overdue_data[0].total) if purchase_overdue_data else 0.0,
+                "overdueCount": cint(purchase_overdue_data[0].count) if purchase_overdue_data else 0
+            },
+            "customer": {
+                "totalCustomers": total_customers,
+                "activeCustomers": active_customers,
+                "inactiveCustomers": inactive_customers
+            },
+            "supplier": {
+                "totalSuppliers": total_suppliers,
+                "activeSuppliers": active_suppliers,
+                "inactiveSuppliers": inactive_suppliers
+            }
+        }
 
         return send_old_response(
             status="success",
-            message="Sales summary retrieved successfully.",
-            data={
-                "totalSales": total_sales,
-                "salesCount": sales_count,
-                "totalOutstanding": total_outstanding,
-                "outstandingCount": outstanding_count,
-                "totalOverdue": total_overdue,
-                "overdueCount": overdue_count
-            },
+            message="Dashboard summary retrieved successfully.",
+            data=summary_data,
             status_code=200,
             http_status=200,
         )
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Sales Summary API Error")
+        frappe.log_error(frappe.get_traceback(), "Dashboard Summary API Error")
         
         return send_old_response(
             status="error",
-            message=f"Error retrieving sales summary: {str(e)}",
+            message=f"Error retrieving dashboard summary: {str(e)}",
             data=None,
             status_code=500,
             http_status=500,
         )
+
+
+
+
+
