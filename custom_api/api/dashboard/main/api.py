@@ -106,7 +106,7 @@ def sales_summary():
         outstanding_data = (
             frappe.qb.from_(si)
             .select(
-                Sum(si.outstanding_amount).as_("total_outstanding"),
+                Sum(si.outstanding_amount * si.conversion_rate).as_("total_outstanding"),
                 Count(si.name).as_("outstanding_count")
             )
             .where(si.docstatus == 1)
