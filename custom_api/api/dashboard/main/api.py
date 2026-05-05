@@ -1,6 +1,7 @@
 from custom_api.utils.response import send_old_response
 import frappe
-from frappe.utils import flt
+from frappe.utils import flt, nowdate, cint
+from frappe.query_builder.functions import Sum, Count
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def summary():
@@ -75,6 +76,88 @@ def summary():
         return send_old_response(
             status="error",
             message=f"Error retrieving summary: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def sales_summary():
+    try:
+        # Get the default company for the logged-in user
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
+        today = nowdate()
+
+        # Initialize the DocType for Query Builder
+        si = frappe.qb.DocType("Sales Invoice")
+
+        # 1. Fetch Total Sales Amount & Total Sales Count
+        sales_data = (
+            frappe.qb.from_(si)
+            .select(
+                Sum(si.base_grand_total).as_("total_sales"),
+                Count(si.name).as_("sales_count")
+            )
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+        ).run(as_dict=True)
+
+        # 2. Fetch Total Outstanding Amount & Outstanding Invoice Count
+        outstanding_data = (
+            frappe.qb.from_(si)
+            .select(
+                Sum(si.outstanding_amount).as_("total_outstanding"),
+                Count(si.name).as_("outstanding_count")
+            )
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+            .where(si.outstanding_amount > 0)
+        ).run(as_dict=True)
+
+        # 3. Fetch Total Overdue Amount & Overdue Invoice Count
+        overdue_data = (
+            frappe.qb.from_(si)
+            .select(
+                Sum(si.outstanding_amount).as_("total_overdue"),
+                Count(si.name).as_("overdue_count")
+            )
+            .where(si.docstatus == 1)
+            .where(si.company == company)
+            .where(si.due_date < today)
+            .where(si.outstanding_amount > 0)
+        ).run(as_dict=True)
+
+        # Safely extract float (flt) amounts and integer (cint) counts
+        total_sales = flt(sales_data[0].total_sales) if sales_data else 0.0
+        sales_count = cint(sales_data[0].sales_count) if sales_data else 0
+        
+        total_outstanding = flt(outstanding_data[0].total_outstanding) if outstanding_data else 0.0
+        outstanding_count = cint(outstanding_data[0].outstanding_count) if outstanding_data else 0
+        
+        total_overdue = flt(overdue_data[0].total_overdue) if overdue_data else 0.0
+        overdue_count = cint(overdue_data[0].overdue_count) if overdue_data else 0
+
+        return send_old_response(
+            status="success",
+            message="Sales summary retrieved successfully.",
+            data={
+                "totalSales": total_sales,
+                "salesCount": sales_count,
+                "totalOutstanding": total_outstanding,
+                "outstandingCount": outstanding_count,
+                "totalOverdue": total_overdue,
+                "overdueCount": overdue_count
+            },
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Sales Summary API Error")
+        
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving sales summary: {str(e)}",
             data=None,
             status_code=500,
             http_status=500,
