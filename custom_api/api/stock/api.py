@@ -528,6 +528,7 @@ def get_batch_wise_stock_report(
             "total_sell_value":    sell_info["sell_value"],
             "sell_currency":       sell_info["sell_currency"],
             "batches":             [],
+            "is_service_item": 1
         }
 
     # ── Step 7: Pagination ────────────────────────────────────────────────────
