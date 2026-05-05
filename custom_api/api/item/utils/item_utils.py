@@ -14,9 +14,9 @@ def map_to_frappe_item(data: dict, brand: str) -> dict:
         "weight_uom": data.get("weightUnit") or "Kg",
 
         # Flags
-        "is_stock_item": 1,
-        "is_purchase_item": 1,
-        "is_sales_item": 1,
+        "is_stock_item": data.get("is_stock_item", 1),
+        "is_purchase_item": data.get("is_purchase_item",1),
+        "is_sales_item": data.get("is_sales_item", 1),
 
         # Link Brand
         "brand": brand,
@@ -133,13 +133,16 @@ def map_item_response(item, tax_category=None):
 
         "countryOfOrigin": item.country_of_origin or "",
 
+        "is_stock_item": item.is_stock_item,
+        "is_purchase_item": item.is_purchase_item,
+        "is_sales_item": item.is_sales_item,
+
         "dimensionLength": item_metadata.length if item_metadata else "",
         "dimensionWidth": item_metadata.width if item_metadata else "",
         "dimensionHeight": item_metadata.height if item_metadata else "",
         "packingUnit": item_metadata.packing_unit if item_metadata else "",
         "packingSize": item_metadata.packing_size if item_metadata else "",
         "itemClassCode": item_metadata.hsn_code if item_metadata else "",
-
         "inventoryInfo": {
             "valuationMethod": item.valuation_method or "",
             "trackingMethod": _get_tracking_method(item),
@@ -256,7 +259,9 @@ def _update_basic_fields(item_doc, data, brand):
     item_doc.valuation_method = data.get("inventoryInfo", {}).get("valuationMethod") or "FIFO"
 
     batch_info = data.get("batchInfo", {})
-
+    item_doc.is_stock_item = data.get("is_stock_item"),
+    item_doc.is_purchase_item = data.get("is_purchase_item"),
+    item_doc.is_sales_item = data.get("is_sales_item"),
     item_doc.has_batch_no = 1 if batch_info.get("has_batch_no") else 0
     item_doc.has_expiry_date = 1 if batch_info.get("has_expiry_date") else 0
     item_doc.shelf_life_in_days = int(

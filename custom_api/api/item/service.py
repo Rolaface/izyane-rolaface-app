@@ -48,6 +48,9 @@ def get_items_service(params):
             "has_expiry_date",
             "shelf_life_in_days",
             "country_of_origin"
+            "is_sales_item",
+            "is_stock_item",
+            "is_purchase_item"
         ],
         limit_start=(current_page - 1) * page_size,
         limit_page_length=page_size
