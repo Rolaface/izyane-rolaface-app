@@ -1,6 +1,6 @@
 from custom_api.utils.response import send_old_response
 import frappe
-from frappe.utils import flt, cint, nowdate
+from frappe.utils import flt, cint, nowdate, getdate
 from frappe.query_builder.functions import Sum, Count
 from frappe.query_builder import Order
 
@@ -93,9 +93,6 @@ def dashboard_summary():
         si = frappe.qb.DocType("Sales Invoice")
         pi = frappe.qb.DocType("Purchase Invoice")
 
-        # ==========================================
-        # 2. Sales Queries
-        # ==========================================
         sales_data = (
             frappe.qb.from_(si)
             .select(Sum(si.base_grand_total).as_("total"), Count(si.name).as_("count"))
@@ -115,9 +112,6 @@ def dashboard_summary():
             .where(si.due_date < today).where(si.outstanding_amount > 0)
         ).run(as_dict=True)
 
-        # ==========================================
-        # 3. Purchase Queries
-        # ==========================================
         purchase_data = (
             frappe.qb.from_(pi)
             .select(Sum(pi.base_grand_total).as_("total"), Count(pi.name).as_("count"))
@@ -137,9 +131,6 @@ def dashboard_summary():
             .where(pi.due_date < today).where(pi.outstanding_amount > 0)
         ).run(as_dict=True)
 
-        # ==========================================
-        # 4. Customer & Supplier Queries
-        # ==========================================
         total_customers = frappe.db.count("Customer")
         active_customers = frappe.db.count("Customer", {"disabled": 0})
         inactive_customers = frappe.db.count("Customer", {"disabled": 1})
@@ -148,9 +139,6 @@ def dashboard_summary():
         active_suppliers = frappe.db.count("Supplier", {"disabled": 0})
         inactive_suppliers = frappe.db.count("Supplier", {"disabled": 1})
 
-        # ==========================================
-        # 5. Compile and Return Final Dictionary
-        # ==========================================
         summary_data = {
             "sales": {
                 "totalSales": flt(sales_data[0].total) if sales_data else 0.0,
@@ -210,9 +198,6 @@ def notes():
         pi = frappe.qb.DocType("Purchase Invoice")
         sii = frappe.qb.DocType("Sales Invoice Item")
 
-        # ==========================================
-        # 2. Top Customer (By highest base_grand_total)
-        # ==========================================
         top_customer_query = (
             frappe.qb.from_(si)
             .select(si.customer, Sum(si.base_grand_total).as_("total_sales"))
@@ -225,9 +210,6 @@ def notes():
 
         top_customer = top_customer_query[0] if top_customer_query else None
 
-        # ==========================================
-        # 3. Top Supplier (By highest base_grand_total)
-        # ==========================================
         top_supplier_query = (
             frappe.qb.from_(pi)
             .select(pi.supplier, Sum(pi.base_grand_total).as_("total_purchases"))
@@ -240,9 +222,6 @@ def notes():
 
         top_supplier = top_supplier_query[0] if top_supplier_query else None
 
-        # ==========================================
-        # 4. Top Selling Item (By Quantity)
-        # ==========================================
         top_item_qty_query = (
             frappe.qb.from_(sii)
             .inner_join(si).on(sii.parent == si.name)
@@ -256,9 +235,6 @@ def notes():
 
         top_item_by_qty = top_item_qty_query[0] if top_item_qty_query else None
 
-        # ==========================================
-        # 5. Top Selling Value Item (By Base Amount)
-        # ==========================================
         top_item_val_query = (
             frappe.qb.from_(sii)
             .inner_join(si).on(sii.parent == si.name)
@@ -272,9 +248,6 @@ def notes():
 
         top_item_by_value = top_item_val_query[0] if top_item_val_query else None
 
-        # ==========================================
-        # 6. Compile and Return Final Dictionary
-        # ==========================================
         notes_data = {
             "topCustomer": {
                 "name": top_customer.customer if top_customer else "N/A",
@@ -315,6 +288,162 @@ def notes():
             http_status=500,
         )
 
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def sales_chart(from_date=None, to_date=None, year=None):
+    try:
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
 
+        # 1. Build ORM Filters
+        filters = {
+            "docstatus": 1,
+            "company": company
+        }
+
+        # Handle Date Range & Year logic for ORM
+        if year:
+            # Override from/to dates to encapsulate the entire year
+            filters["posting_date"] = ["between", [f"{year}-01-01", f"{year}-12-31"]]
+        elif from_date and to_date:
+            filters["posting_date"] = ["between", [from_date, to_date]]
+        elif from_date:
+            filters["posting_date"] = [">=", from_date]
+        elif to_date:
+            filters["posting_date"] = ["<=", to_date]
+
+        # 2. Fetch Data using ORM
+        invoices = frappe.get_all(
+            "Sales Invoice",
+            filters=filters,
+            fields=["posting_date", "base_grand_total", "outstanding_amount"]
+        )
+
+        # 3. Process Data in Python Memory
+        total_receivable = 0.0
+        total_received = 0.0
+        monthly_trend = {}
+
+        for inv in invoices:
+            receivable = flt(inv.base_grand_total)
+            received = receivable - flt(inv.outstanding_amount)
+
+            # Aggregate Overall Totals
+            total_receivable += receivable
+            total_received += received
+
+            # Group by Month for Trend
+            if inv.posting_date:
+                date_obj = getdate(inv.posting_date)
+                month_key = date_obj.strftime("%Y-%m")
+                
+                if month_key not in monthly_trend:
+                    monthly_trend[month_key] = {"receivable": 0.0, "received": 0.0}
+                
+                monthly_trend[month_key]["receivable"] += receivable
+                monthly_trend[month_key]["received"] += received
+
+        chart_data = {
+            "totals": {
+                "totalReceivable": total_receivable,
+                "totalReceived": total_received
+            },
+            "trend": monthly_trend
+        }
+
+        return send_old_response(
+            status="success",
+            message="Sales chart data retrieved successfully.",
+            data=chart_data,
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Sales Chart API Error")
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving sales chart data: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
+
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def purchase_chart(from_date=None, to_date=None, year=None):
+    try:
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
+
+        # 1. Build ORM Filters
+        filters = {
+            "docstatus": 1,
+            "company": company
+        }
+
+        # Handle Date Range & Year logic for ORM
+        if year:
+            filters["posting_date"] = ["between", [f"{year}-01-01", f"{year}-12-31"]]
+        elif from_date and to_date:
+            filters["posting_date"] = ["between", [from_date, to_date]]
+        elif from_date:
+            filters["posting_date"] = [">=", from_date]
+        elif to_date:
+            filters["posting_date"] = ["<=", to_date]
+
+        # 2. Fetch Data using ORM
+        invoices = frappe.get_all(
+            "Purchase Invoice",
+            filters=filters,
+            fields=["posting_date", "base_grand_total", "outstanding_amount"]
+        )
+
+        # 3. Process Data in Python Memory
+        total_payable = 0.0
+        total_paid = 0.0
+        monthly_trend = {}
+
+        for inv in invoices:
+            payable = flt(inv.base_grand_total)
+            paid = payable - flt(inv.outstanding_amount)
+
+            # Aggregate Overall Totals
+            total_payable += payable
+            total_paid += paid
+
+            # Group by Month for Trend
+            if inv.posting_date:
+                date_obj = getdate(inv.posting_date)
+                month_key = date_obj.strftime("%Y-%m")
+                
+                if month_key not in monthly_trend:
+                    monthly_trend[month_key] = {"payable": 0.0, "paid": 0.0}
+                
+                monthly_trend[month_key]["payable"] += payable
+                monthly_trend[month_key]["paid"] += paid
+
+        chart_data = {
+            "totals": {
+                "totalPayable": total_payable,
+                "totalPaid": total_paid
+            },
+            "trend": monthly_trend
+        }
+
+        return send_old_response(
+            status="success",
+            message="Purchase chart data retrieved successfully.",
+            data=chart_data,
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Purchase Chart API Error")
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving purchase chart data: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
 
 
