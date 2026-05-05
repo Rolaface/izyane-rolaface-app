@@ -26,22 +26,19 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Batch No",
-   "options": "Batch",
-   "reqd": 1
+   "options": "Batch"
   },
   {
    "fieldname": "box_start",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Box Start",
-   "reqd": 1
+   "label": "Box Start"
   },
   {
    "fieldname": "box_end",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Box End",
-   "reqd": 1
+   "label": "Box End"
   }
  ],
  "grid_page_length": 50,
