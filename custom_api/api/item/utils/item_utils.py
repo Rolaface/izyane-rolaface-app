@@ -282,10 +282,14 @@ def _update_taxes(item_doc, data):
 
             tax_name = tax_info.get("taxName")
             tax_category = tax_info.get("taxCategory")
+            if not tax_name and not tax_category:
+                continue
 
             if not tax_name:
                 frappe.throw((f"Tax Type is required"))
 
+            if not tax_category:
+                frappe.throw(f"TaxCategory is required.")
             item_doc.append("taxes", {
             "item_tax_template": tax_name,
             "tax_category": tax_category
