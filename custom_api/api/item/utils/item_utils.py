@@ -259,9 +259,9 @@ def _update_basic_fields(item_doc, data, brand):
     item_doc.valuation_method = data.get("inventoryInfo", {}).get("valuationMethod") or "FIFO"
 
     batch_info = data.get("batchInfo", {})
-    item_doc.is_stock_item = data.get("is_stock_item"),
-    item_doc.is_purchase_item = data.get("is_purchase_item"),
-    item_doc.is_sales_item = data.get("is_sales_item"),
+    item_doc.is_stock_item = data.get("is_stock_item")
+    item_doc.is_purchase_item = data.get("is_purchase_item")
+    item_doc.is_sales_item = data.get("is_sales_item")
     item_doc.has_batch_no = 1 if batch_info.get("has_batch_no") else 0
     item_doc.has_expiry_date = 1 if batch_info.get("has_expiry_date") else 0
     item_doc.shelf_life_in_days = int(
