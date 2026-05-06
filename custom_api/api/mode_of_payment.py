@@ -99,6 +99,7 @@ def get():
             as_dict=True
         )
         mop["defaultAccount"] = account.get("default_account") if account else None
+        mop["company"] = company
         mop["currency"] = frappe.db.get_value("Account", mop["defaultAccount"], "account_currency") if mop["defaultAccount"] else None
 
     return send_old_response(
