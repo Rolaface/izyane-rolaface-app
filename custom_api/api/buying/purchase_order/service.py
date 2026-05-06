@@ -179,11 +179,12 @@ def get_po_by_id(po_id):
         tax = _get_tax(item.item_code, po_doc.tax_category)
         description = frappe.get_value("Item", item.item_code,["description"])
 
-        shelf_life = frappe.db.get_value(
-            "Item",
-            item.item_code,
-            "shelf_life_in_days"
-        )
+        item_details = frappe.db.get_value(
+                            "Item",
+                            item.item_code,
+                            ["shelf_life_in_days", "has_batch_no"],
+                            as_dict=True
+                        )
 
         po_items.append({
             "itemCode": item.item_code,
@@ -192,13 +193,14 @@ def get_po_by_id(po_id):
             "rate": item.rate,
             "requiredBy": str(item.schedule_date) if item.schedule_date else None,
             "warehouse": item.warehouse,
-            "shelfLife": shelf_life or 0,
+            "shelfLife": item_details.get("shelf_life_in_days") or 0,
             "uom": item.uom,
             # "itemTaxTemplate": item.item_tax_template,
             "taxInfo": tax,
             "packingUnit": str(item_meta.get("packing_unit")) if item_meta else "",
             "packingSize": str(item_meta.get("packing_size")) if item_meta else "",
-            "description": description
+            "description": description,
+            "has_batch_no": item_details.get("has_batch_no"),
         })
     advances = frappe.get_all(
             "Payment Entry Reference",
