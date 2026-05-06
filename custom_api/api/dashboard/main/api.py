@@ -1,7 +1,7 @@
 from custom_api.utils.response import send_old_response
 import frappe
 from frappe.utils import flt, cint, nowdate, getdate
-from frappe.query_builder.functions import Sum, Count
+from frappe.query_builder.functions import Sum, Count, Extract
 from frappe.query_builder import Order
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
@@ -446,4 +446,182 @@ def purchase_chart(from_date=None, to_date=None, year=None):
             http_status=500,
         )
 
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+def inventory_chart(from_date=None, to_date=None, year=None):
+    try:
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
 
+        # Helper function to generate and run the monthly aggregated query
+        def get_monthly_query(parent_doctype, child_doctype):
+            parent = frappe.qb.DocType(parent_doctype)
+            child = frappe.qb.DocType(child_doctype)
+
+            # Use Extract('month', ...) to group data by month (1 to 12)
+            query = (
+                frappe.qb.from_(child)
+                .inner_join(parent).on(child.parent == parent.name)
+                .select(
+                    Extract('month', parent.posting_date).as_("month_num"),
+                    Sum(child.qty).as_("total_qty"),
+                    Sum(child.base_amount).as_("total_value")
+                )
+                .where(parent.docstatus == 1)
+                .where(parent.company == company)
+                # FIXED: Group by the actual function, not the alias
+                .groupby(Extract('month', parent.posting_date))
+            )
+
+            # Apply Date Filters
+            if year:
+                query = query.where(parent.posting_date >= f"{year}-01-01").where(parent.posting_date <= f"{year}-12-31")
+            elif from_date and to_date:
+                query = query.where(parent.posting_date >= from_date).where(parent.posting_date <= to_date)
+            elif from_date:
+                query = query.where(parent.posting_date >= from_date)
+            elif to_date:
+                query = query.where(parent.posting_date <= to_date)
+
+            return query.run(as_dict=True)
+
+        # ==========================================
+        # 1. Fetch Monthly Data
+        # ==========================================
+        selling_data = get_monthly_query("Sales Invoice", "Sales Invoice Item")
+        buying_data = get_monthly_query("Purchase Invoice", "Purchase Invoice Item")
+
+        # ==========================================
+        # 2. Initialize 12 Months Array
+        # ==========================================
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        
+        # This structure matches what the frontend React chart expects
+        chart_data = [
+            {"itemName": m, "buyQty": 0.0, "buyValue": 0.0, "sellQty": 0.0, "sellValue": 0.0} 
+            for m in months
+        ]
+
+        # ==========================================
+        # 3. Populate Array with Data
+        # ==========================================
+        # Populate Selling Data
+        for row in selling_data:
+            month_idx = int(row.month_num) - 1 # Database month is 1-12, Array index is 0-11
+            if 0 <= month_idx < 12:
+                chart_data[month_idx]["sellQty"] = flt(row.total_qty)
+                chart_data[month_idx]["sellValue"] = flt(row.total_value)
+
+        # Populate Buying Data
+        for row in buying_data:
+            month_idx = int(row.month_num) - 1
+            if 0 <= month_idx < 12:
+                chart_data[month_idx]["buyQty"] = flt(row.total_qty)
+                chart_data[month_idx]["buyValue"] = flt(row.total_value)
+
+        # ==========================================
+        # 4. Return Final Data
+        # ==========================================
+        return send_old_response(
+            status="success",
+            message="Inventory chart data retrieved successfully.",
+            data=chart_data,
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Inventory Chart API Error")
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving inventory chart data: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
+    try:
+        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
+
+        # Helper function to generate and run the monthly aggregated query
+        def get_monthly_query(parent_doctype, child_doctype):
+            parent = frappe.qb.DocType(parent_doctype)
+            child = frappe.qb.DocType(child_doctype)
+
+            # Use Extract('month', ...) to group data by month (1 to 12)
+            query = (
+                frappe.qb.from_(child)
+                .inner_join(parent).on(child.parent == parent.name)
+                .select(
+                    Extract('month', parent.posting_date).as_("month_num"),
+                    Sum(child.qty).as_("total_qty"),
+                    Sum(child.base_amount).as_("total_value")
+                )
+                .where(parent.docstatus == 1)
+                .where(parent.company == company)
+                .groupby("month_num")
+            )
+
+            # Apply Date Filters
+            if year:
+                query = query.where(parent.posting_date >= f"{year}-01-01").where(parent.posting_date <= f"{year}-12-31")
+            elif from_date and to_date:
+                query = query.where(parent.posting_date >= from_date).where(parent.posting_date <= to_date)
+            elif from_date:
+                query = query.where(parent.posting_date >= from_date)
+            elif to_date:
+                query = query.where(parent.posting_date <= to_date)
+
+            return query.run(as_dict=True)
+
+        # ==========================================
+        # 1. Fetch Monthly Data
+        # ==========================================
+        selling_data = get_monthly_query("Sales Invoice", "Sales Invoice Item")
+        buying_data = get_monthly_query("Purchase Invoice", "Purchase Invoice Item")
+
+        # ==========================================
+        # 2. Initialize 12 Months Array
+        # ==========================================
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        
+        # This structure matches what the frontend React chart expects
+        chart_data = [
+            {"itemName": m, "buyQty": 0.0, "buyValue": 0.0, "sellQty": 0.0, "sellValue": 0.0} 
+            for m in months
+        ]
+
+        # ==========================================
+        # 3. Populate Array with Data
+        # ==========================================
+        # Populate Selling Data
+        for row in selling_data:
+            month_idx = int(row.month_num) - 1 # Database month is 1-12, Array index is 0-11
+            if 0 <= month_idx < 12:
+                chart_data[month_idx]["sellQty"] = flt(row.total_qty)
+                chart_data[month_idx]["sellValue"] = flt(row.total_value)
+
+        # Populate Buying Data
+        for row in buying_data:
+            month_idx = int(row.month_num) - 1
+            if 0 <= month_idx < 12:
+                chart_data[month_idx]["buyQty"] = flt(row.total_qty)
+                chart_data[month_idx]["buyValue"] = flt(row.total_value)
+
+        # ==========================================
+        # 4. Return Final Data
+        # ==========================================
+        return send_old_response(
+            status="success",
+            message="Inventory chart data retrieved successfully.",
+            data=chart_data,
+            status_code=200,
+            http_status=200,
+        )
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Inventory Chart API Error")
+        return send_old_response(
+            status="error",
+            message=f"Error retrieving inventory chart data: {str(e)}",
+            data=None,
+            status_code=500,
+            http_status=500,
+        )
