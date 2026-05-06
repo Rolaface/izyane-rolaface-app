@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 import frappe
 from custom_api.utils.response import send_response, send_response_list
 from .utils import validate_sales_invoice_payload
@@ -115,6 +116,7 @@ def get_sales_invoice_by_id(id):
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Sales Invoice", "read")
 def get_sales_invoices(page=1, page_size=20):
     data = frappe.local.form_dict
     search = data.get("search")

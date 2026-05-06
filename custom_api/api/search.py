@@ -1,5 +1,5 @@
 import frappe
-from custom_api.utils.response import send_response, send_response_list
+from custom_api.utils.response import send_old_response, send_response, send_response_list
 from erpnext.accounts.doctype.account.account import get_account_currency
 from erpnext.accounts.doctype.bank_account.bank_account import (
     get_default_company_bank_account,
@@ -398,7 +398,7 @@ def parties_and_accounts():
         )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Suppliers API Error")
-        return send_response(
+        return send_old_response(
             status="fail", message=str(e), data=None, status_code=500, http_status=500
         )
 
