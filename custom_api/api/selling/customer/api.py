@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 import frappe
 from custom_api.utils.response import send_response, send_response_list
 from .utils import validate_customer_payload, validate_customer_update_payload
@@ -5,6 +6,7 @@ from ....utils.party_utils import parse_api_payload
 from . import service
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Customer", "create")
 def create_customer():
     try:
         data = parse_api_payload()
@@ -55,12 +57,16 @@ def update_customer(id=None, **kwargs):
     except frappe.exceptions.ValidationError as e:
         frappe.db.rollback()
         return send_response(status="fail", message=str(e), status_code=400, http_status=400)
+    except frappe.exceptions.PermissionError:
+        frappe.db.rollback()
+        return send_response(status="fail", message="You do not have permission to update Customer. Please contact your Administrator.", status_code=403, http_status=403)
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Update Customer API Error")
-        return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
+        return send_response(status="error", message=f"{str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Customer", "read")
 def get_customer_by_id(id):
     try:
         if not frappe.db.exists("Customer", id):
@@ -74,6 +80,7 @@ def get_customer_by_id(id):
         return send_response(status="error", message=f"Failed to retrieve customer: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Customer", "read")
 def get_customers(page=1, page_size=20):
     try:
         try:
@@ -105,6 +112,7 @@ def get_customers(page=1, page_size=20):
         return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["DELETE"])
+@require_permission("Customer", "delete")
 def delete_customer(id=None):
     try:
         customer_id = id or frappe.local.form_dict.get("id")
@@ -127,6 +135,7 @@ def delete_customer(id=None):
         return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["PUT", "PATCH"])
+# @require_permission("Customer", "write")
 def update_customer_status(id=None):
     try:
         data = parse_api_payload()
@@ -163,4 +172,4 @@ def update_customer_status(id=None):
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Update Customer Status API Error")
-        return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
+        return send_response(status="error", message=f"{str(e)}", status_code=500, http_status=500)
