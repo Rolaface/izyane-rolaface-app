@@ -200,7 +200,7 @@ def get_po_by_id(po_id):
             "packingUnit": str(item_meta.get("packing_unit")) if item_meta else "",
             "packingSize": str(item_meta.get("packing_size")) if item_meta else "",
             "description": description,
-            "has_batch_no": item_details.get("has_batch_no"),
+            "has_batch_no": bool(item_details.get("has_batch_no")),
         })
     advances = frappe.get_all(
             "Payment Entry Reference",
