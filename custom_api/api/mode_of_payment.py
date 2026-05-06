@@ -153,20 +153,23 @@ def update():
     if mop_updates:
         frappe.db.set_value("Mode of Payment", name, mop_updates)
 
-    if default_account:
-        existing = frappe.db.exists(
+    existing = frappe.db.exists(
             "Mode of Payment Account",
             {"parent": name, "company": company}
         )
-        if existing:
+    if default_account or existing:
+        if existing and default_account:
             frappe.db.set_value("Mode of Payment Account", existing, "default_account", default_account)
         else:
             # No account for this company yet — create one
             mop_doc = frappe.get_doc("Mode of Payment", name)
-            mop_doc.append("accounts", {
-                "company": company,
-                "default_account": default_account,
-            })
+            if existing and not default_account:
+                mop_doc.accounts = []
+            else:
+                mop_doc.append("accounts", {
+                    "company": company,
+                    "default_account": default_account,
+                })
             mop_doc.save(ignore_permissions=True)
 
     frappe.db.commit()
