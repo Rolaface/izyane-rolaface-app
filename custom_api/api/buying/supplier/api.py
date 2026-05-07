@@ -6,6 +6,7 @@ from ....utils.party_utils import parse_api_payload
 from . import service
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Supplier", "create")
 def create_supplier():
     try:
         data = parse_api_payload()
@@ -27,6 +28,7 @@ def create_supplier():
         return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["PUT", "PATCH"])
+@require_permission("Supplier", "write")
 def update_supplier(id=None, **kwargs):
     try:        
         data = parse_api_payload()
@@ -108,6 +110,7 @@ def get_suppliers(page=1, page_size=20):
         return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["DELETE"])
+@require_permission("Supplier", "delete")
 def delete_supplier(id=None):
     try:
         supplier_id = id or frappe.local.form_dict.get("id")
