@@ -33,6 +33,7 @@ def create():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["PUT"])
+@require_permission("Purchase Order", "write")
 def update():
     try:
         data = frappe.local.form_dict
@@ -136,6 +137,7 @@ def get_by_id():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Purchase Invoice", "create")
 def create_pi_from_po():
 
     po_id = frappe.request.args.get("po_id")
