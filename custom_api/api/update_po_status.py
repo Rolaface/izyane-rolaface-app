@@ -45,6 +45,9 @@ def update_purchase_order_status():
             server_messages = []
             for msg_str in frappe.local.message_log:
                 msg = frappe.parse_json(msg_str)
+                if "does not have doctype access via role permission for document" in msg.get("message", ""):
+                    msg["message"] = f"You do not have permission to {status} the Purchase Order. Please contact your administrator."
+
                 server_messages.append(msg.get("message", msg_str))
 
             return send_old_response(
