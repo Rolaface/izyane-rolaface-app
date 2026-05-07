@@ -1,9 +1,11 @@
 from custom_api.api.item.utils.item_utils import _get_tax
+from custom_api.permission import require_permission
 import frappe
 
 from custom_api.utils.response import send_response
 
 @frappe.whitelist()
+@require_permission("Item", "read")
 def get_batch_wise_stock_report(
     from_date=None,
     to_date=None,

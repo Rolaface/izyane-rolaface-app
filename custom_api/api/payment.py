@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_old_response, send_response_list
 import frappe
 from erpnext.setup.utils import get_exchange_rate
@@ -152,6 +153,7 @@ def build_taxes(taxes, pe):
 
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Payment Entry", "create")
 def create_payment_entry():
     try:
         data = frappe.request.get_json()
@@ -322,7 +324,6 @@ def create_payment_entry():
 
         pe.insert(ignore_permissions=True)
         pe.submit()
-        frappe.db.commit()
 
         return send_old_response(
             status="success",
@@ -363,6 +364,7 @@ def create_payment_entry():
 # GET ALL PAYMENTS
 # ─────────────────────────────────────────
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Payment Entry", "read")
 def get_all_payments():
     try:
         args = frappe.request.args
@@ -591,6 +593,7 @@ def get_all_payments():
 # GET PAYMENT BY ID
 # ─────────────────────────────────────────
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Payment Entry", "read")
 def get_payment_by_id():
     try:
         payment_id = frappe.request.args.get("payment_id")

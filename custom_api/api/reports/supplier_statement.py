@@ -1,9 +1,11 @@
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_response
 from frappe.utils import nowdate, date_diff, getdate
 import frappe
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Supplier", "report")
 def get_supplier_statement():
     supplier_id = frappe.form_dict.get("supplierId")
     page = int(frappe.form_dict.get("page", 1))

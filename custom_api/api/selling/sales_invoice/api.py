@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 import frappe
 from custom_api.utils.response import send_response, send_response_list
 from .utils import validate_sales_invoice_payload
@@ -6,6 +7,7 @@ from . import service
 
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Sales Invoice", "create")
 def create_sales_invoice():
     try:
         data = parse_api_payload()
@@ -38,6 +40,7 @@ def create_sales_invoice():
 
 
 @frappe.whitelist(allow_guest=False, methods=["PUT", "PATCH"])
+@require_permission("Sales Invoice", "write")
 def update_sales_invoice(id=None, **kwargs):
     try:
         data = parse_api_payload()
@@ -85,6 +88,7 @@ def update_sales_invoice(id=None, **kwargs):
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Sales Invoice", "read")
 def get_sales_invoice_by_id(id):
     try:
         if not frappe.db.exists("Sales Invoice", id):
@@ -115,6 +119,7 @@ def get_sales_invoice_by_id(id):
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Sales Invoice", "read")
 def get_sales_invoices(page=1, page_size=20):
     data = frappe.local.form_dict
     search = data.get("search")
@@ -168,6 +173,7 @@ def get_sales_invoices(page=1, page_size=20):
 
 
 @frappe.whitelist(allow_guest=False, methods=["DELETE"])
+@require_permission("Sales Invoice", "delete")
 def delete_sales_invoice(id=None):
     try:
         invoice_id = id or frappe.local.form_dict.get("id")
@@ -274,7 +280,7 @@ def update_sales_invoice_status(id=None, action=None):
     except frappe.exceptions.PermissionError as e:
         frappe.db.rollback()
         return send_response(
-            status="fail", message=str(e), status_code=403, http_status=403
+            status="fail", message=f"You do not have permission to {action} the status of this Sales Invoice.Please contact your Administrator.", status_code=403, http_status=403
         )
 
     except Exception as e:

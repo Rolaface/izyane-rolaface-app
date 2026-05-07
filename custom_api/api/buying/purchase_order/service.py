@@ -39,21 +39,19 @@ def create_po_service(data):
     po_doc.run_method("set_missing_values")
     po_doc.run_method("calculate_taxes_and_totals")
     po_doc.insert(ignore_permissions=True)
-    if not data.get("terms").get("buying"):
-        frappe.throw("Buying terms are required")
+    if data.get("terms").get("buying"):
+        terms = sync_terms(po_doc, data.get("terms"), terms_type="buying")
+        if terms:
+            if frappe.db.exists("Payment Terms Template", f"{po_doc.name} Buying PT"):
+                po_doc.payment_terms_template = f"{po_doc.name} Buying PT"
+                po_doc.set("payment_schedule", [])
 
-    terms = sync_terms(po_doc, data.get("terms"), terms_type="buying")
-    if terms:
-        if frappe.db.exists("Payment Terms Template", f"{po_doc.name} Buying PT"):
-            po_doc.payment_terms_template = f"{po_doc.name} Buying PT"
-            po_doc.set("payment_schedule", [])
+            po_doc.tc_name = terms
+            po_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
 
-        po_doc.tc_name = terms
-        po_doc.terms = frappe.db.get_value("Terms and Conditions", terms, "terms") if terms else ""
-
-        po_doc.run_method("set_missing_values")
-        po_doc.run_method("calculate_taxes_and_totals")
-        po_doc.save(ignore_permissions=True)
+            po_doc.run_method("set_missing_values")
+            po_doc.run_method("calculate_taxes_and_totals")
+            po_doc.save(ignore_permissions=True)
 
 def update_po_service(po_id, data):
 

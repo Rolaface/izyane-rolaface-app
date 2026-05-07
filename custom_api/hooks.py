@@ -247,3 +247,7 @@ doc_events = {
         "validate": "custom_api.api.buying.purchase_invoice.before_validate_hooks.before_validate"
     }
 }
+
+override_whitelisted_methods = {
+    "frappe.client.delete": "custom_api.overrides.frappe_client.delete",
+}

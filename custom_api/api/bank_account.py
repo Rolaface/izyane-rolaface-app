@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 import frappe
 from custom_api.utils.response import send_response, send_old_response
 from frappe.utils import ceil
@@ -84,6 +85,7 @@ def create():
         )
     
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Bank Account", "read")
 def get():
     company    = frappe.request.args.get("company", None)
     party_type = frappe.request.args.get("party_type")

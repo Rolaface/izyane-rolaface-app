@@ -1,10 +1,12 @@
 from custom_api.api.selling.sales_invoice.utils import validate_receivable_account_for_currency
+from custom_api.permission import require_permission
 from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice
 import frappe
 from custom_api.utils.response import send_old_response, send_response_list
 from .service import create_po_service, get_po_by_id, update_po_service, get_po_list
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Purchase Order", "create")
 def create():
     try:
         data = frappe.local.form_dict
@@ -31,6 +33,7 @@ def create():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["PUT"])
+@require_permission("Purchase Order", "write")
 def update():
     try:
         data = frappe.local.form_dict
@@ -62,6 +65,7 @@ def update():
         )
 
 @frappe.whitelist(allow_guest=False)
+@require_permission("Purchase Order", "read")
 def get():
     data = frappe.local.form_dict
 
@@ -92,6 +96,7 @@ def get():
     )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Purchase Order", "read")
 def get_by_id():
     try:
         po_id = frappe.request.args.get("id")
@@ -132,6 +137,7 @@ def get_by_id():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Purchase Invoice", "create")
 def create_pi_from_po():
 
     po_id = frappe.request.args.get("po_id")

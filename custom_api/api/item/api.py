@@ -1,9 +1,11 @@
 from custom_api.api.item.service import create_item_service, get_items_service, update_item_service
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_old_response
 import frappe
 from frappe import _
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Item", "create")
 def create():
     try:
         data = frappe.request.get_json()
@@ -27,6 +29,7 @@ def create():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Item", "read")
 def get():
     try:
         params = frappe.request.args
@@ -51,6 +54,7 @@ def get():
                 )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Item", "read")
 def get_by_id():
     try:
         params = frappe.request.args
@@ -75,6 +79,7 @@ def get_by_id():
                 )
 
 @frappe.whitelist(allow_guest=False, methods=["PUT"])
+@require_permission("Item", "write")
 def update():
     try:
         id = frappe.request.args.get("item_code")
