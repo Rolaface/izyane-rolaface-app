@@ -153,6 +153,7 @@ def build_taxes(taxes, pe):
 
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Payment Entry", "create")
 def create_payment_entry():
     try:
         data = frappe.request.get_json()
@@ -323,7 +324,6 @@ def create_payment_entry():
 
         pe.insert(ignore_permissions=True)
         pe.submit()
-        frappe.db.commit()
 
         return send_old_response(
             status="success",
@@ -593,6 +593,7 @@ def get_all_payments():
 # GET PAYMENT BY ID
 # ─────────────────────────────────────────
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Payment Entry", "read")
 def get_payment_by_id():
     try:
         payment_id = frappe.request.args.get("payment_id")
