@@ -1,9 +1,11 @@
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_response
 from frappe.utils import nowdate, date_diff, getdate
 import frappe
 
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Customer", "report")
 def get_customer_statement():
     customer_id = frappe.form_dict.get("id")
     page = int(frappe.form_dict.get("page", 1))
