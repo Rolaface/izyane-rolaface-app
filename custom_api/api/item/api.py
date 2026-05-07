@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Item", "create")
 def create():
     try:
         data = frappe.request.get_json()
@@ -53,6 +54,7 @@ def get():
                 )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Item", "read")
 def get_by_id():
     try:
         params = frappe.request.args
@@ -77,6 +79,7 @@ def get_by_id():
                 )
 
 @frappe.whitelist(allow_guest=False, methods=["PUT"])
+@require_permission("Item", "write")
 def update():
     try:
         id = frappe.request.args.get("item_code")
