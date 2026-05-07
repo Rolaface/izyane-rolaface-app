@@ -1,4 +1,5 @@
 from custom_api.api.item.service import create_item_service, get_items_service, update_item_service
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_old_response
 import frappe
 from frappe import _
@@ -27,6 +28,7 @@ def create():
         )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Item", "read")
 def get():
     try:
         params = frappe.request.args

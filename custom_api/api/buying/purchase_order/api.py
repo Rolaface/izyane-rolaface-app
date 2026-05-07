@@ -6,6 +6,7 @@ from custom_api.utils.response import send_old_response, send_response_list
 from .service import create_po_service, get_po_by_id, update_po_service, get_po_list
 
 @frappe.whitelist(allow_guest=False, methods=["POST"])
+@require_permission("Purchase Order", "create")
 def create():
     try:
         data = frappe.local.form_dict
@@ -94,6 +95,7 @@ def get():
     )
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Purchase Order", "read")
 def get_by_id():
     try:
         po_id = frappe.request.args.get("id")
