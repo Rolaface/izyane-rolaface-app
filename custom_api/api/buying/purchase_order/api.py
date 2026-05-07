@@ -1,4 +1,5 @@
 from custom_api.api.selling.sales_invoice.utils import validate_receivable_account_for_currency
+from custom_api.permission import require_permission
 from erpnext.buying.doctype.purchase_order.purchase_order import make_purchase_invoice
 import frappe
 from custom_api.utils.response import send_old_response, send_response_list
@@ -62,6 +63,7 @@ def update():
         )
 
 @frappe.whitelist(allow_guest=False)
+@require_permission("Purchase Order", "read")
 def get():
     data = frappe.local.form_dict
 

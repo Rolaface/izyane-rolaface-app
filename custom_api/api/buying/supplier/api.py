@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 import frappe
 from custom_api.utils.response import send_response, send_response_list
 from .utils import validate_supplier_payload,  validate_supplier_update_payload
@@ -61,6 +62,7 @@ def update_supplier(id=None, **kwargs):
         return send_response(status="error", message=f"Internal Server Error: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Supplier", "read")
 def get_supplier_by_id(id):
     try:
         if not frappe.db.exists("Supplier", id):
@@ -74,6 +76,7 @@ def get_supplier_by_id(id):
         return send_response(status="error", message=f"Failed to retrieve supplier: {str(e)}", status_code=500, http_status=500)
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Supplier", "read")
 def get_suppliers(page=1, page_size=20):
     try:
         try:
