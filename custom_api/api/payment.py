@@ -1,3 +1,4 @@
+from custom_api.permission import require_permission
 from custom_api.utils.response import send_old_response, send_response_list
 import frappe
 from erpnext.setup.utils import get_exchange_rate
@@ -363,6 +364,7 @@ def create_payment_entry():
 # GET ALL PAYMENTS
 # ─────────────────────────────────────────
 @frappe.whitelist(allow_guest=False, methods=["GET"])
+@require_permission("Payment Entry", "read")
 def get_all_payments():
     try:
         args = frappe.request.args
