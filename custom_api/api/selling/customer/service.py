@@ -88,13 +88,21 @@ def get_customer_by_id(customer_id):
         "terms": get_linked_terms(customer_id, "selling")
     }
 
-def get_customers(page, page_size):
+def get_customers(page, page_size, search):
     start = (page - 1) * page_size
     total_customers = frappe.db.count("Customer")
     total_pages = (total_customers + page_size - 1) // page_size
-
+    if search:
+        or_filters = [
+            ["name", "like", f"%{search}%"],
+            ["customer_name", "like", f"%{search}%"],
+            ["customer_type", "like", f"%{search}%"],
+            ["email_id", "like", f"%{search}"],
+            ["tax_category", "like", f"%{search}"],
+        ]
     customers = frappe.get_all(
         "Customer",
+        or_filters=or_filters if search else None,
         fields=["name", "customer_name", "customer_type", "tax_id", "mobile_no", "email_id", "default_currency", "tax_category", "disabled"],
         limit_start=start, limit_page_length=page_size, order_by="creation desc"
     )
@@ -112,7 +120,6 @@ def get_customers(page, page_size):
         c["contacts"] = get_linked_contacts("Customer", c["id"])
 
     return customers, total_customers, total_pages
-
 def delete_customer(customer_id):
     frappe.db.set_value("Customer", customer_id, {
         "customer_primary_contact": None, 

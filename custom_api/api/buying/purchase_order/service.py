@@ -117,6 +117,7 @@ def get_po_list(filters=None, page=1, page_size=10, search=""):
         or_filters = [
             ["name", "like", f"%{search}%"],
             ["supplier", "like", f"%{search}%"],
+            ["supplier_name", "like", f"%{search}%"],
             ["status", "like", f"%{search}%"],
             ["transaction_date", "like", f"%{search}%"],
             ["schedule_date", "like", f"%{search}"],
