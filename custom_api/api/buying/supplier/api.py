@@ -79,7 +79,7 @@ def get_supplier_by_id(id):
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 @require_permission("Supplier", "read")
-def get_suppliers(page=1, page_size=20):
+def get_suppliers(page=1, page_size=20, search=""):
     try:
         try:
             page, page_size = int(page), int(page_size)
@@ -87,7 +87,7 @@ def get_suppliers(page=1, page_size=20):
         except ValueError:
             return send_response(status="fail", message="Page constraints must be positive integers.", status_code=400, http_status=400)
 
-        suppliers, total_suppliers, total_pages = service.get_suppliers(page, page_size)
+        suppliers, total_suppliers, total_pages = service.get_suppliers(page, page_size, search)
 
         response_data = {
             "success": True, 
