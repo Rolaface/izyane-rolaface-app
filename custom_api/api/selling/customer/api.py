@@ -81,7 +81,7 @@ def get_customer_by_id(id):
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 @require_permission("Customer", "read")
-def get_customers(page=1, page_size=20):
+def get_customers(page=1, page_size=20, search=""):
     try:
         try:
             page, page_size = int(page), int(page_size)
@@ -89,7 +89,7 @@ def get_customers(page=1, page_size=20):
         except ValueError:
             return send_response(status="fail", message="Page constraints must be positive integers.", status_code=400, http_status=400)
 
-        customers, total_customers, total_pages = service.get_customers(page, page_size)
+        customers, total_customers, total_pages = service.get_customers(page, page_size, search)
 
         response_data = {
             "success": True, 
