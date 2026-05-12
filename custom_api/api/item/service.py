@@ -27,6 +27,15 @@ def get_items_service(params):
 
     current_page = int(params.get("page", 1))
     page_size = int(params.get("page_size", 10))
+    search = params.get("search", "").strip()
+    or_filters = []
+    if search:
+        or_filters = [
+            ["name", "like", f"%{search}%"],
+            ["item_name", "like", f"%{search}%"],
+            ["item_group", "like", f"%{search}%"],
+            ["brand", "like", f"%{search}%"]
+        ]
 
     filters = _build_filters(params)
 
@@ -34,6 +43,7 @@ def get_items_service(params):
     items = frappe.get_all(
         "Item",
         filters=filters,
+        or_filters=or_filters if search else None,
         fields=[
             "name",
             "item_name",
