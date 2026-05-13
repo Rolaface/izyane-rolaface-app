@@ -200,7 +200,7 @@ def notes():
 
         top_customer_query = (
             frappe.qb.from_(si)
-            .select(si.customer, Sum(si.base_grand_total).as_("total_sales"))
+            .select(si.customer_name, Sum(si.base_grand_total).as_("total_sales"))
             .where(si.docstatus == 1)
             .where(si.company == company)
             .groupby(si.customer)
@@ -212,7 +212,7 @@ def notes():
 
         top_supplier_query = (
             frappe.qb.from_(pi)
-            .select(pi.supplier, Sum(pi.base_grand_total).as_("total_purchases"))
+            .select(pi.supplier_name, Sum(pi.base_grand_total).as_("total_purchases"))
             .where(pi.docstatus == 1)
             .where(pi.company == company)
             .groupby(pi.supplier)
@@ -250,11 +250,11 @@ def notes():
 
         notes_data = {
             "topCustomer": {
-                "name": top_customer.customer if top_customer else "N/A",
+                "name": top_customer.customer_name if top_customer else "N/A",
                 "value": flt(top_customer.total_sales) if top_customer else 0.0
             },
             "topSupplier": {
-                "name": top_supplier.supplier if top_supplier else "N/A",
+                "name": top_supplier.supplier_name if top_supplier else "N/A",
                 "value": flt(top_supplier.total_purchases) if top_supplier else 0.0
             },
             "topSellingItemQty": {
