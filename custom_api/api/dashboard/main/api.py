@@ -310,7 +310,7 @@ def sales_chart(from_date=None, to_date=None, year=None, interval="Monthly"):
         invoices = frappe.get_all(
             "Sales Invoice",
             filters=filters,
-            fields=["posting_date", "base_grand_total", "outstanding_amount"]
+            fields=["posting_date", "base_grand_total", "outstanding_amount", "conversion_rate"]
         )
 
         total_receivable = 0.0
@@ -318,10 +318,13 @@ def sales_chart(from_date=None, to_date=None, year=None, interval="Monthly"):
         trend_data = {} 
 
         for inv in invoices:
-            receivable = flt(inv.base_grand_total)
-            received = receivable - flt(inv.outstanding_amount)
+            receivable_pending = flt(inv.outstanding_amount) * flt(inv.conversion_rate)
+            
+            # The amount already paid (Total Invoiced - Pending)
+            received = flt(inv.base_grand_total) - receivable_pending
 
-            total_receivable += receivable
+            # 2. UPDATE OVERALL TOTALS
+            total_receivable += receivable_pending
             total_received += received
 
             if inv.posting_date:
@@ -344,7 +347,7 @@ def sales_chart(from_date=None, to_date=None, year=None, interval="Monthly"):
                 if group_key not in trend_data:
                     trend_data[group_key] = {"receivable": 0.0, "received": 0.0}
                 
-                trend_data[group_key]["receivable"] += receivable
+                trend_data[group_key]["receivable"] += receivable_pending
                 trend_data[group_key]["received"] += received
 
         chart_data = {
