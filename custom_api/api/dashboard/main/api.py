@@ -459,24 +459,32 @@ def inventory_chart(from_date=None, to_date=None, year=None):
     try:
         company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
 
-        # Helper function to generate and run the monthly aggregated query
-        def get_monthly_query(parent_doctype, child_doctype):
+        # Helper function to generate data grouped by month AND item
+        def get_item_monthly_data(parent_doctype, child_doctype):
             parent = frappe.qb.DocType(parent_doctype)
             child = frappe.qb.DocType(child_doctype)
+            item = frappe.qb.DocType("Item")
 
-            # Use Extract('month', ...) to group data by month (1 to 12)
+            # Join Child, Parent, and Item tables
             query = (
                 frappe.qb.from_(child)
                 .inner_join(parent).on(child.parent == parent.name)
+                .inner_join(item).on(child.item_code == item.name)
                 .select(
                     Extract('month', parent.posting_date).as_("month_num"),
+                    child.item_code,
+                    child.item_name,
                     Sum(child.qty).as_("total_qty"),
                     Sum(child.base_amount).as_("total_value")
                 )
                 .where(parent.docstatus == 1)
                 .where(parent.company == company)
-                # FIXED: Group by the actual function, not the alias
-                .groupby(Extract('month', parent.posting_date))
+                .where(item.is_stock_item == 1) # Filter for stock items only
+                .groupby(
+                    Extract('month', parent.posting_date), 
+                    child.item_code, 
+                    child.item_name
+                )
             )
 
             # Apply Date Filters
@@ -492,133 +500,83 @@ def inventory_chart(from_date=None, to_date=None, year=None):
             return query.run(as_dict=True)
 
         # ==========================================
-        # 1. Fetch Monthly Data
+        # 1. Fetch Monthly Data Grouped by Item
         # ==========================================
-        selling_data = get_monthly_query("Sales Invoice", "Sales Invoice Item")
-        buying_data = get_monthly_query("Purchase Invoice", "Purchase Invoice Item")
+        selling_data = get_item_monthly_data("Sales Invoice", "Sales Invoice Item")
+        buying_data = get_item_monthly_data("Purchase Invoice", "Purchase Invoice Item")
 
         # ==========================================
-        # 2. Initialize 12 Months Array
+        # 2. Map Buying Data for Easy Lookup
+        # ==========================================
+        # Create a dictionary using (month_num, item_code) as the key
+        buying_dict = {}
+        for row in buying_data:
+            key = (int(row.month_num), row.item_code)
+            buying_dict[key] = {
+                "buyQty": flt(row.total_qty),
+                "buyValue": flt(row.total_value)
+            }
+
+        # ==========================================
+        # 3. Find the Top Selling Item Per Month
+        # ==========================================
+        top_selling_per_month = {}
+        
+        for row in selling_data:
+            month_idx = int(row.month_num) - 1 # Array index is 0-11
+            if 0 <= month_idx < 12:
+                current_qty = flt(row.total_qty)
+                
+                # If this month isn't tracked yet, OR if this item sold more than the currently tracked top item
+                if month_idx not in top_selling_per_month or current_qty > top_selling_per_month[month_idx]["sellQty"]:
+                    top_selling_per_month[month_idx] = {
+                        "itemCode": row.item_code,
+                        "itemName": row.item_name,
+                        "sellQty": current_qty,
+                        "sellValue": flt(row.total_value),
+                        "month_num": int(row.month_num)
+                    }
+
+        # ==========================================
+        # 4. Initialize and Populate 12 Months Array
         # ==========================================
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
-        # This structure matches what the frontend React chart expects
-        chart_data = [
-            {"itemName": m, "buyQty": 0.0, "buyValue": 0.0, "sellQty": 0.0, "sellValue": 0.0} 
-            for m in months
-        ]
+        chart_data = []
+
+        for month_idx, month_name in enumerate(months):
+            # Base object for the month
+            base_data = {
+                "month": month_name, 
+                "itemCode": None,
+                "itemName": "No Sales",
+                "buyQty": 0.0,
+                "buyValue": 0.0,
+                "sellQty": 0.0,
+                "sellValue": 0.0
+            }
+
+            # If there were sales this month, update with the top item
+            if month_idx in top_selling_per_month:
+                top_item = top_selling_per_month[month_idx]
+                base_data["itemCode"] = top_item["itemCode"]
+                base_data["itemName"] = top_item["itemName"]
+                base_data["sellQty"] = top_item["sellQty"]
+                base_data["sellValue"] = top_item["sellValue"]
+
+                # Now, find if we bought THIS specific item in THIS specific month
+                buy_key = (top_item["month_num"], top_item["itemCode"])
+                if buy_key in buying_dict:
+                    base_data["buyQty"] = buying_dict[buy_key]["buyQty"]
+                    base_data["buyValue"] = buying_dict[buy_key]["buyValue"]
+
+            chart_data.append(base_data)
 
         # ==========================================
-        # 3. Populate Array with Data
-        # ==========================================
-        # Populate Selling Data
-        for row in selling_data:
-            month_idx = int(row.month_num) - 1 # Database month is 1-12, Array index is 0-11
-            if 0 <= month_idx < 12:
-                chart_data[month_idx]["sellQty"] = flt(row.total_qty)
-                chart_data[month_idx]["sellValue"] = flt(row.total_value)
-
-        # Populate Buying Data
-        for row in buying_data:
-            month_idx = int(row.month_num) - 1
-            if 0 <= month_idx < 12:
-                chart_data[month_idx]["buyQty"] = flt(row.total_qty)
-                chart_data[month_idx]["buyValue"] = flt(row.total_value)
-
-        # ==========================================
-        # 4. Return Final Data
+        # 5. Return Final Data
         # ==========================================
         return send_old_response(
             status="success",
-            message="Inventory chart data retrieved successfully.",
-            data=chart_data,
-            status_code=200,
-            http_status=200,
-        )
-
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Inventory Chart API Error")
-        return send_old_response(
-            status="error",
-            message=f"Error retrieving inventory chart data: {str(e)}",
-            data=None,
-            status_code=500,
-            http_status=500,
-        )
-    try:
-        company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
-
-        # Helper function to generate and run the monthly aggregated query
-        def get_monthly_query(parent_doctype, child_doctype):
-            parent = frappe.qb.DocType(parent_doctype)
-            child = frappe.qb.DocType(child_doctype)
-
-            # Use Extract('month', ...) to group data by month (1 to 12)
-            query = (
-                frappe.qb.from_(child)
-                .inner_join(parent).on(child.parent == parent.name)
-                .select(
-                    Extract('month', parent.posting_date).as_("month_num"),
-                    Sum(child.qty).as_("total_qty"),
-                    Sum(child.base_amount).as_("total_value")
-                )
-                .where(parent.docstatus == 1)
-                .where(parent.company == company)
-                .groupby("month_num")
-            )
-
-            # Apply Date Filters
-            if year:
-                query = query.where(parent.posting_date >= f"{year}-01-01").where(parent.posting_date <= f"{year}-12-31")
-            elif from_date and to_date:
-                query = query.where(parent.posting_date >= from_date).where(parent.posting_date <= to_date)
-            elif from_date:
-                query = query.where(parent.posting_date >= from_date)
-            elif to_date:
-                query = query.where(parent.posting_date <= to_date)
-
-            return query.run(as_dict=True)
-
-        # ==========================================
-        # 1. Fetch Monthly Data
-        # ==========================================
-        selling_data = get_monthly_query("Sales Invoice", "Sales Invoice Item")
-        buying_data = get_monthly_query("Purchase Invoice", "Purchase Invoice Item")
-
-        # ==========================================
-        # 2. Initialize 12 Months Array
-        # ==========================================
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
-        # This structure matches what the frontend React chart expects
-        chart_data = [
-            {"itemName": m, "buyQty": 0.0, "buyValue": 0.0, "sellQty": 0.0, "sellValue": 0.0} 
-            for m in months
-        ]
-
-        # ==========================================
-        # 3. Populate Array with Data
-        # ==========================================
-        # Populate Selling Data
-        for row in selling_data:
-            month_idx = int(row.month_num) - 1 # Database month is 1-12, Array index is 0-11
-            if 0 <= month_idx < 12:
-                chart_data[month_idx]["sellQty"] = flt(row.total_qty)
-                chart_data[month_idx]["sellValue"] = flt(row.total_value)
-
-        # Populate Buying Data
-        for row in buying_data:
-            month_idx = int(row.month_num) - 1
-            if 0 <= month_idx < 12:
-                chart_data[month_idx]["buyQty"] = flt(row.total_qty)
-                chart_data[month_idx]["buyValue"] = flt(row.total_value)
-
-        # ==========================================
-        # 4. Return Final Data
-        # ==========================================
-        return send_old_response(
-            status="success",
-            message="Inventory chart data retrieved successfully.",
+            message="Top inventory items per month retrieved successfully.",
             data=chart_data,
             status_code=200,
             http_status=200,
