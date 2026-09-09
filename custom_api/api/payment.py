@@ -509,7 +509,8 @@ def get_all_payments():
         # Status filter
         status = args.get("status")
         if status:
-            filters["status"] = status
+            status = status.split(",")
+            filters["status"] = ["in", status]
 
         # Date range filter
         from_date = args.get("from_date")
@@ -573,11 +574,7 @@ def get_all_payments():
             "creation": "creation",
         }
 
-        sort_by = args.get("sortBy", "creation")
-        sort_order = args.get("sortOrder", "desc").lower()
-        sort_field = allowed_sort_fields.get(sort_by, "posting_date")
-        sort_order = "asc" if sort_order == "asc" else "desc"
-        order_by = f"{sort_field} {sort_order}"
+        order_by = args.get("order_by", "creation desc")
 
         # ─────────────────────────────────────────
         # FETCH
