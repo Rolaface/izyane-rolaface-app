@@ -64,29 +64,35 @@ def update():
             http_status=500
         )
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=False, methods=["GET"])
 @require_permission("Purchase Order", "read")
 def get():
-    data = frappe.local.form_dict
-
+    data = frappe.request.args
     page = int(data.get("page", 1))
     page_size = int(data.get("pageSize", 10))
 
     filters = {}
-
+    order_by = data.get("order_by", "creation desc")
     if data.get("supplier"):
         filters["supplier"] = data.get("supplier")
 
-    if data.get("status"):
-        if data.get("status") == "Approved":
-            filters["status"] = ["in", ["To Receive", "To Receive and Bill"]]
-        else:
-            filters["status"] = data.get("status")
+    statuses = data.get("status")
+    if statuses:
+        statuses = statuses.split(",")
+        mapped_statuses = []
+
+        for status in statuses:
+            if status == "Approved":
+                mapped_statuses.extend(["To Receive", "To Receive and Bill"])
+            else:
+                mapped_statuses.append(status)
+
+        filters["status"] = ["in", list(set(mapped_statuses))]
 
     
     search = data.get("search")
 
-    response =  get_po_list(filters, page, page_size, search)
+    response =  get_po_list(filters, page, page_size, search, order_by)
     return send_response_list(
         status="success",
         message="Purchase Orders retrieved successfully",

@@ -106,7 +106,7 @@ def update_po_service(po_id, data):
 
     return po_doc
 
-def get_po_list(filters=None, page=1, page_size=10, search=""):
+def get_po_list(filters=None, page=1, page_size=10, search="", order_by="creation desc"):
 
     filters = filters or {}
 
@@ -131,7 +131,7 @@ def get_po_list(filters=None, page=1, page_size=10, search=""):
         fields=["name", "supplier_name", "transaction_date", "schedule_date", "grand_total", "status", "shipping_rule", "currency"],
         limit_start=limit_start,
         limit_page_length=page_size,
-        order_by="creation desc"
+        order_by=order_by
     )
 
     for po in pos:
