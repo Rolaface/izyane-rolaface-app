@@ -221,6 +221,57 @@ def get_classifications(page=1, page_size=10):
         )
 
 
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+# @require_permission("Custom Item Classification", "read")
+def get_classification_children(parent_code=None, page_size=50, cursor=None):
+	"""Return one paginated level of the hierarchy.
+
+	When parent_code is omitted, only active Level 1 classifications are returned.
+	"""
+	try:
+		parent_code = parent_code or frappe.local.form_dict.get("parent_code")
+		page_size = page_size or frappe.local.form_dict.get("page_size") or 50
+		cursor = cursor or frappe.local.form_dict.get("cursor")
+		items, pagination = service.get_classification_children(parent_code, page_size, cursor)
+		return send_response_list(
+			status="success",
+			message="Classification children retrieved successfully",
+			status_code=200,
+			data={"data": items, "pagination": pagination},
+			http_status=200,
+		)
+	except frappe.exceptions.ValidationError as e:
+		return send_response(status="fail", message=str(e), status_code=400, http_status=400)
+	except frappe.DoesNotExistError as e:
+		return send_response(status="fail", message=str(e), status_code=404, http_status=404)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Get Classification Children API Error")
+		return send_response(status="error", message="Failed to retrieve classification children", status_code=500, http_status=500)
+
+
+@frappe.whitelist(allow_guest=False, methods=["GET"])
+# @require_permission("Custom Item Classification", "read")
+def search_classifications(search=None, page_size=30, cursor=None):
+	"""Search active classifications and return their complete ancestor paths."""
+	try:
+		search = search if search is not None else frappe.local.form_dict.get("search")
+		page_size = page_size or frappe.local.form_dict.get("page_size") or 30
+		cursor = cursor or frappe.local.form_dict.get("cursor")
+		items, pagination = service.search_classifications(search, page_size, cursor)
+		return send_response_list(
+			status="success",
+			message="Classifications searched successfully",
+			status_code=200,
+			data={"data": items, "pagination": pagination},
+			http_status=200,
+		)
+	except frappe.exceptions.ValidationError as e:
+		return send_response(status="fail", message=str(e), status_code=400, http_status=400)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Search Classifications API Error")
+		return send_response(status="error", message="Failed to search classifications", status_code=500, http_status=500)
+
+
 @frappe.whitelist(allow_guest=False, methods=["DELETE"])
 # @require_permission("Custom Item Classification", "delete")
 def delete_classification(id=None):
