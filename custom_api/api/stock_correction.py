@@ -51,8 +51,11 @@ def create_stock_correction(posting_date, items, warehouse=None, posting_time=No
         if not row_warehouse:
             frappe.throw(_("Warehouse is required for item {0}").format(item_code))
 
+        batch_no = row.get("batch_no") if row.get("batch_no") != "-" else None
+        serial_no = row.get("serial_no") if row.get("serial_no") != "-" else None
+
         has_batch = frappe.db.get_value("Item", item_code, "has_batch_no")
-        if has_batch and not row.get("batch_no"):
+        if has_batch and not batch_no:
             frappe.throw(_("Batch No is mandatory for item {0}").format(item_code))
 
         if purpose == "Opening Stock" and row.get("valuation_rate") is None:
@@ -63,8 +66,8 @@ def create_stock_correction(posting_date, items, warehouse=None, posting_time=No
             "warehouse": row_warehouse,
             "qty": row.get("qty"),
             "valuation_rate": row.get("valuation_rate"),
-            "serial_no": row.get("serial_no"),
-            "batch_no": row.get("batch_no"),
+            "serial_no": serial_no,
+            "batch_no": batch_no,
             "use_serial_batch_fields": 1,
         })
         
