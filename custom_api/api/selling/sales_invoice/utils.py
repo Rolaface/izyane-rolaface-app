@@ -790,24 +790,23 @@ def get_payment_information(mode_of_payment, company):
     }
 
 def get_already_credited_qty(invoice_id):
-    credit_notes = frappe.get_all(
-        "Sales Invoice",
-        filters={"is_return": 1, "return_against": invoice_id, "docstatus": 1},
-        pluck="name",
-    )
-
-    if not credit_notes:
-        return {}
-
-    credit_note_items = frappe.get_all(
-        "Sales Invoice Item",
-        filters={"parent": ["in", credit_notes]},
-        fields=["item_code", "batch_no", "qty"],
+    rows = frappe.db.sql(
+        """
+        SELECT child.item_code, COALESCE(child.batch_no, '') as batch_no, SUM(ABS(child.qty)) as credited_qty
+        FROM `tabSales Invoice Item` child
+        INNER JOIN `tabSales Invoice` parent ON parent.name = child.parent
+        WHERE parent.return_against = %s
+          AND parent.docstatus = 1
+          AND (parent.is_return = 1 OR parent.is_debit_note = 1)
+        GROUP BY child.item_code, child.batch_no
+        """,
+        (invoice_id,),
+        as_dict=True,
     )
 
     credited_map = {}
-    for row in credit_note_items:
+    for row in rows:
         key = (row.item_code, row.batch_no or "")
-        credited_map[key] = credited_map.get(key, 0) + abs(row.qty)
+        credited_map[key] = flt(row.credited_qty)
 
     return credited_map

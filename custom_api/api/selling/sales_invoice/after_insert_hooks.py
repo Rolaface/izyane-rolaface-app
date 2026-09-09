@@ -18,7 +18,7 @@ def after_insert(doc, method):
     if "zra_smart_invoice" in installed_apps:
         doc.disable_rounded_total = 1
 
-    if not doc.is_return or not doc.is_debit_note:
+    if not doc.is_return and not doc.is_debit_note:
         company_name = frappe.defaults.get_user_default("Company")
         company_doc = frappe.get_doc("Company", company_name)
         use_separate_sequence_for_credit_notes = None

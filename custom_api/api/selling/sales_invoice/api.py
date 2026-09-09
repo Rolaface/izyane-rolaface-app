@@ -90,7 +90,7 @@ def update_sales_invoice(id=None, **kwargs):
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 @require_permission("Sales Invoice", "read")
-def get_sales_invoice_by_id(id, is_credit_note=False):
+def get_sales_invoice_by_id(id, is_credit_note=False, is_sales_debit_note=False):
     try:
         if not frappe.db.exists("Sales Invoice", id):
             return send_response(
@@ -100,7 +100,7 @@ def get_sales_invoice_by_id(id, is_credit_note=False):
                 http_status=404,
             )
 
-        data = service.get_sales_invoice_by_id(id,is_credit_note)
+        data = service.get_sales_invoice_by_id(id, is_credit_note, is_sales_debit_note)
         return send_response(
             status="success",
             message="Sales Invoice retrieved successfully",

@@ -75,6 +75,37 @@ def send_response_list_sale(status="success", message="", data=None, pagination=
 
     frappe.local.response = frappe._dict(response_payload)
     frappe.local.response.http_status_code = http_status
-
-
     
+def handle_api_error(e: Exception, context_message: str):
+    frappe.db.rollback()
+    
+    if not isinstance(e, (frappe.ValidationError, frappe.DuplicateEntryError, frappe.DoesNotExistError)):
+        frappe.log_error(frappe.get_traceback(), context_message)
+
+    error_message = str(e).strip()
+    import re
+    error_message = re.sub('<[^<]+?>', '', error_message)
+
+    status_code = 500
+    status_type = "error"
+
+    if isinstance(e, frappe.DoesNotExistError):
+        status_code = 404
+        status_type = "fail"
+    elif isinstance(e, frappe.DuplicateEntryError):
+        status_code = 409
+        status_type = "fail"
+    elif isinstance(e, frappe.PermissionError):
+        status_code = 403
+        status_type = "fail"
+        error_message = "You do not have permission to perform this action."
+    elif isinstance(e, frappe.ValidationError):
+        status_code = 400
+        status_type = "fail"
+    
+    return send_response(
+        status=status_type,
+        message=error_message,
+        status_code=status_code,
+        http_status=status_code,
+    )
