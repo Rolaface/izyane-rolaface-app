@@ -34,7 +34,12 @@ def build_rfq_filters(args):
         return frappe_filters
 
     if args.get("status"):
-        frappe_filters["status"] = ["in", args["status"]]
+        mapped_statuses = []
+        status = args.get("status")
+        status_filters = status.split(",") if isinstance(status, str) else status
+        for status_filter in status_filters:
+            mapped_statuses.append(status_filter)
+        frappe_filters["status"] = ["in", mapped_statuses]
 
     if args.get("from_date") and args.get("to_date"):
         frappe_filters["transaction_date"] = ["between", [args["from_date"], args["to_date"]]]
