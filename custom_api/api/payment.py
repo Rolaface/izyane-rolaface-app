@@ -513,8 +513,8 @@ def get_all_payments():
             filters["status"] = ["in", status]
 
         # Date range filter
-        from_date = args.get("from_date")
-        to_date = args.get("to_date")
+        from_date = args.get("fromDate")
+        to_date = args.get("toDate")
         if from_date and to_date:
             filters["posting_date"] = ["between", [from_date, to_date]]
         elif from_date:
