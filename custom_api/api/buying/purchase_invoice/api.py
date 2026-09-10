@@ -154,7 +154,7 @@ def update_status():
 
         pi_doc = frappe.get_doc("Purchase Invoice", pId)
 
-        valid_statuses = ["Return","Submitted","Paid","Party Paid",
+        valid_statuses = ["Return","Submitted","Paid","Partly Paid",
                           "Cancelled","Internal Transfer","Debit Note Issued"]
 
         if new_status not in valid_statuses:
