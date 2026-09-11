@@ -11,6 +11,8 @@ import json
 
 def get_purchase_invoice_list(filters=None, page=1, page_size=10, search=""):
 
+    order_by = filters.get("order_by", "creation desc")
+
     filters = build_pi_filters(filters)
 
     limit_start = (page - 1) * page_size
@@ -32,7 +34,7 @@ def get_purchase_invoice_list(filters=None, page=1, page_size=10, search=""):
             "rounded_total",
             # "supplier_invoice_date"
         ],
-        order_by="creation desc"
+        order_by=order_by
     )
 
     invoices = apply_pi_search(invoices, search)
