@@ -19,7 +19,6 @@ from .utils import (
     get_lpo_tax_template,
     get_zero_rated_tax_template
 )
-from frappe.desk.doctype.tag.tag import add_tag, remove_tag
 from custom_api.api.item.utils.item_utils import _get_tax
 
 def create_sales_invoice(data):
@@ -134,8 +133,6 @@ def create_sales_invoice(data):
     terms_payload = data.get("terms")
     if terms_payload:
         sync_invoice_terms(invoice, terms_payload)
-    if data.get("paymentMode") == "PDC":
-        add_tag("PDC", "Sales Invoice", invoice.name)
     return invoice
 
 def update_sales_invoice_customer(invoice, customer_id):
@@ -278,11 +275,6 @@ def update_sales_invoice(invoice_id, data):
         invoice.set("custom_details", [])
         if detail:
             invoice.append("custom_details", detail)
-
-    if data.get("paymentMode") == "PDC":
-        add_tag("PDC", "Sales Invoice", invoice.name)
-    else:
-        remove_tag("PDC", "Sales Invoice", invoice.name)
 
     invoice.additional_discount_percentage = data.get("additional_discount_percentage")
     invoice.discount_amount = data.get("discount_amount")
