@@ -1,0 +1,24 @@
+    <table style="width:70%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">
+        <thead>
+            <tr style="background-color: #4F46E5; color: white;">
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: left;">#</th>
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: left;">Cheque Reference No</th>
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: left;">Against</th>
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: left;">Cheque Date</th>
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: left;">Due</th>
+                <th style="padding: 10px 8px; border: 1px solid #ddd; text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pdc in pdcs %}
+            <tr style="background-color: {{ '#f9f9f9' if loop.index % 2 == 0 else '#ffffff' }};">
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ loop.index }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ pdc.cheque_reference_number or "-" }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ pdc.document_type }} - {{ pdc.document_name }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ frappe.utils.formatdate(pdc.cheque_date) }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: {{ '#DC2626' if pdc.due_label == 'Today' else '#D97706' }};">{{ pdc.due_label }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{{ pdc.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
