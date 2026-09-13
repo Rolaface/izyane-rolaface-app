@@ -85,3 +85,9 @@ def update_pdc(name, data):
 
     pdc_doc.save()
     add_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+
+def delete_pdc(name):
+    pdc_doc = frappe.get_doc("Custom Pdc Details", name)
+    remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
+    frappe.delete_doc("Custom Pdc Details", name)

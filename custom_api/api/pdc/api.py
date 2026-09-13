@@ -1,5 +1,5 @@
 import frappe
-from .service import get_all, create_pdc, update_pdc
+from .service import get_all, create_pdc, update_pdc, delete_pdc
 from custom_api.utils.response import send_old_response, send_response_list
 
 @frappe.whitelist(allow_guest = False, methods=["GET"])
@@ -68,6 +68,50 @@ def update(name):
                 )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Update PDC API Error")
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        else:
+            frappe.db.rollback()
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["DELETE"])
+def delete(name):
+    try:
+        if not frappe.db.exists("Custom Pdc Details", name):
+            return send_old_response(
+                status="fail",
+                message="PDC not found",
+                status_code=404,
+                http_status=404
+            )
+
+        delete_pdc(name)
+
+        return send_old_response(
+                    status="success",
+                    message="PDC deleted successfully",
+                    data={"name": name},
+                    status_code=200,
+                    http_status=200
+                )
+    except frappe.exceptions.LinkExistsError:
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        else:
+            frappe.db.rollback()
+        return send_old_response(
+            status="fail",
+            message="Cannot delete: PDC is linked to existing transactions.",
+            status_code=409,
+            http_status=409
+        )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Delete PDC API Error")
         if db := getattr(frappe.local, "db", None):
             db.rollback(chain=True)
         else:
