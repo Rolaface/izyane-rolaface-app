@@ -16,7 +16,4 @@ def build_pi_filters(args):
     if args.get("from_date") and args.get("to_date"):
         frappe_filters["cheque_date"] = ["between", [args["from_date"], args["to_date"]]]
 
-    if args.get("company"):
-        frappe_filters["company"] = args["company"]
-
     return frappe_filters

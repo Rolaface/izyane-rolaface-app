@@ -1,5 +1,5 @@
 import frappe
-from .service import get_all, create_pdc
+from .service import get_all, create_pdc, update_pdc
 from custom_api.utils.response import send_old_response, send_response_list
 
 @frappe.whitelist(allow_guest = False, methods=["GET"])
@@ -41,6 +41,33 @@ def create():
                 )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Create PDC API Error")
+        if db := getattr(frappe.local, "db", None):
+            db.rollback(chain=True)
+        else:
+            frappe.db.rollback()
+        return send_old_response(
+            status="fail",
+            message=str(e),
+            status_code=500,
+            http_status=500
+        )
+
+@frappe.whitelist(allow_guest=False, methods=["PUT"])
+def update(name):
+    try:
+        data = frappe.local.form_dict
+
+        pdc_name = update_pdc(name,data)
+
+        return send_old_response(
+                    status="success",
+                    message="PDC updated successfully",
+                    data={"name": pdc_name},
+                    status_code=200,
+                    http_status=200
+                )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Update PDC API Error")
         if db := getattr(frappe.local, "db", None):
             db.rollback(chain=True)
         else:

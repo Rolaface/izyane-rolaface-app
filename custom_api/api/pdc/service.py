@@ -1,7 +1,8 @@
-from custom_api.api.organization.company.service import upload_file
-
-from .utils import build_pi_filters
 import frappe
+from frappe import _
+from custom_api.api.organization.company.service import upload_file, remove_attach
+from .utils import build_pi_filters
+from .validate import validate_mandatory_fields
 
 def get_all(data):
     or_filters = []
@@ -42,9 +43,11 @@ def get_all(data):
         }
 
 def create_pdc(data):
+    validate_mandatory_fields(data)
+
     pdc_doc = frappe.get_doc({
                                 "doctype": "Custom Pdc Details",
-                                "document_type": data.get("document_type"),
+                                "document_type": data.get("document_type", "Sales Invoice"),
                                 "document_name": data.get("document_name"),
                                 "cheque_reference_number": data.get("cheque_reference_number"),
                                 "cheque_date": data.get("cheque_date"),
@@ -60,3 +63,21 @@ def create_pdc(data):
         pdc_doc.save()
 
     return pdc_doc.name
+
+def update_pdc(name, data):
+
+    validate_mandatory_fields(data)
+    pdc_doc = frappe.get_doc("Custom Pdc Details", name)
+    remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
+    pdc_doc.document_type = data.get("document_type", pdc_doc.document_type)
+    pdc_doc.document_name = data.get("document_name", pdc_doc.document_name)
+    pdc_doc.cheque_reference_number = data.get("cheque_reference_number", pdc_doc.cheque_reference_number)
+    pdc_doc.cheque_date = data.get("cheque_date", pdc_doc.cheque_date)
+    pdc_doc.amount = data.get("amount", pdc_doc.amount)
+    pdc_doc.status = data.get("status", pdc_doc.status)
+    attachment_file = frappe.local.request.files.get("attachment")
+    if attachment_file:
+        uploaded = upload_file(attachment_file, "Custom Pdc Details", pdc_doc.name, "attachment")
+        pdc_doc.attachment = uploaded.file_url
+
+    pdc_doc.save()
