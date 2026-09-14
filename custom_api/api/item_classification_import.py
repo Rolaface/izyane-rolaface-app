@@ -61,9 +61,13 @@ def run_import(file_url, user):
         _notify(user, 100, 0, 0, ["File is empty"], done=True)
         return
 
-    # preload existing codes once, so duplicate checks are O(1) in the loop
-    # instead of a DB hit per row
-    existing_codes = set(frappe.db.get_all("Custom Item Classification", pluck="class_code"))
+    # fresh import every run: wipe existing data first
+    frappe.db.truncate("Custom Item Classification")
+    frappe.db.commit()
+
+    # still guard against duplicate codes appearing twice WITHIN the same
+    # CSV (table itself is empty right after truncate)
+    existing_codes = set()
 
     BATCH_SIZE = 500
     inserted = 0
