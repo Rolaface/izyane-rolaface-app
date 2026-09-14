@@ -2,7 +2,7 @@ import frappe
 
 PDC_REMINDER_TEMPLATE = "custom_api/templates/pdc_reminder.html"
 
-def send_pdc_reminder_email(contact_email, pdcs):
+def send_pdc_reminder_email(company_email, pdcs):
     table_html = frappe.render_template(PDC_REMINDER_TEMPLATE, {"pdcs": pdcs})
     due_today = any(pdc.due_label == "Today" for pdc in pdcs)
     due_tomorrow = any(pdc.due_label == "Tomorrow" for pdc in pdcs)
@@ -16,13 +16,13 @@ def send_pdc_reminder_email(contact_email, pdcs):
 
     message = f"""
         <p>Dear Sir/Madam,</p>
-        <p>This is a reminder for the following Post Dated Cheque(s) (PDC) that need to be submitted:</p>
+        <p>This is a reminder for the following Post Dated Cheque(s) (PDC) that need to be deposited:</p>
         {table_html}
-        <p>Please ensure timely submission/processing.</p>
+        <p>Please ensure timely deposit/processing.</p>
     """
 
     frappe.sendmail(
-        recipients=[contact_email],
+        recipients=[company_email],
         subject=subject,
         content=message,
         raw_html=True,

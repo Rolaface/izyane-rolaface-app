@@ -1,6 +1,6 @@
 import frappe
 
-def get_due_pdcs_grouped_by_contact_email():
+def get_due_pdcs():
     today = frappe.utils.today()
     tomorrow = frappe.utils.add_days(today, 1)
 
@@ -20,23 +20,10 @@ def get_due_pdcs_grouped_by_contact_email():
         ],
     )
 
-    email_map = {}
-
     for pdc in pdcs:
         pdc["due_label"] = "Today" if str(pdc.cheque_date) == str(today) else "Tomorrow"
 
-        contact_email = None
-        if pdc.document_type and pdc.document_name:
-            contact_email = frappe.db.get_value(pdc.document_type, pdc.document_name, "contact_email")
-
-        if not contact_email:
-            continue
-
-        if contact_email not in email_map:
-            email_map[contact_email] = []
-        email_map[contact_email].append(pdc)
-
-    return email_map
+    return pdcs
 
 def expire_overdue_pdcs():
     today = frappe.utils.today()
