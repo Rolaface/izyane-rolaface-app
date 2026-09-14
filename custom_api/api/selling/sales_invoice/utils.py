@@ -639,7 +639,13 @@ def build_sales_invoice_filters(args):
     elif maxOutstanding:
         frappe_filters["outstanding_amount"] = ["<=", float(maxOutstanding)]
 
-    return frappe_filters                           
+    if args.get("pdc", None) is not None:
+        is_pdc = bool(args["pdc"])
+        print(f"Filtering for PDC: {is_pdc}")
+        if is_pdc:
+            frappe_filters["_user_tags"] = ["in" , ["PDC"]]
+
+    return frappe_filters
 
 def ensure_batch(item_code, batch_no, mfg_date=None, exp_date=None, barcode=None):
     if not batch_no or not item_code:
