@@ -24,11 +24,17 @@ def get_all(data):
                             "Custom Pdc Details",
                             filters=filters,
                             or_filters=or_filters,
-                            fields=["name","document_name", "cheque_reference_number", "cheque_date", "amount", "status", "attachment"],
+                            fields=["name","document_type", "document_name", "cheque_reference_number", "cheque_date", "amount", "status", "attachment"],
                             order_by=order_by,
                             limit_start=limit_start,
                             limit_page_length=page_size
                             )
+
+    for pdc in pdcs:
+        pdc["currency"] = None
+        if pdc.document_type and pdc.document_name:
+            pdc["currency"] = frappe.db.get_value(pdc.document_type, pdc.document_name, "currency")
+
     total_count = frappe.db.count("Custom Pdc Details", filters=filters)
 
     return {
