@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from custom_api.api.organization.company.service import upload_file, remove_attach
 from .utils import build_pi_filters
-from .validate import validate_mandatory_fields
+from .validate import validate_mandatory_fields, validate_unique_cheque_reference_number
 from frappe.desk.doctype.tag.tag import add_tag, remove_tag
 
 def get_all(data):
@@ -45,6 +45,7 @@ def get_all(data):
 
 def create_pdc(data):
     validate_mandatory_fields(data)
+    validate_unique_cheque_reference_number(data.get("cheque_reference_number"))
 
     pdc_doc = frappe.get_doc({
                                 "doctype": "Custom Pdc Details",
@@ -69,6 +70,10 @@ def create_pdc(data):
 def update_pdc(name, data):
 
     validate_mandatory_fields(data)
+    cheque_reference_number = data.get("cheque_reference_number")
+    if cheque_reference_number:
+        validate_unique_cheque_reference_number(cheque_reference_number, exclude_name=name)
+
     pdc_doc = frappe.get_doc("Custom Pdc Details", name)
     remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
     remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
