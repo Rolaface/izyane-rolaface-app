@@ -525,6 +525,7 @@ def get_sales_invoices(filters=None, page=1, page_size=20, search=None):
             "company",
             "minOutstanding",
             "maxOutstanding",
+            "pdc",
         ]
         if filters.get(key) is not None
     }
