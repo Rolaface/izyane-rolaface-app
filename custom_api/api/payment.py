@@ -382,6 +382,15 @@ def create_payment_entry():
         print(json.dumps(pe.as_dict(), indent=2, default=str))
         pe.submit()
 
+        if reference_no:
+            pdc_name = frappe.db.get_value(
+                "Custom Pdc Details",
+                {"cheque_reference_number": reference_no, "status": "Unused"},
+                "name",
+            )
+            if pdc_name:
+                frappe.db.set_value("Custom Pdc Details", pdc_name, "status", "Used")
+
         return send_old_response(
             status="success",
             message="Payment entry created successfully.",
