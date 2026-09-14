@@ -1,0 +1,104 @@
+import frappe
+from frappe import _
+from custom_api.api.organization.company.service import upload_file, remove_attach
+from .utils import build_pi_filters
+from .validate import validate_mandatory_fields, validate_unique_cheque_reference_number
+from frappe.desk.doctype.tag.tag import add_tag, remove_tag
+
+def get_all(data):
+    or_filters = []
+    filters = build_pi_filters(data)
+    order_by = data.get("order_by", "creation desc")
+    page = int(data.get("page", 1))
+    search = data.get("search", "").strip()
+    if search:
+            or_filters = [
+                ["document_name", "like", f"%{search}%"],
+                ["cheque_reference_number", "like", f"%{search}%"],
+                ["cheque_date", "like", f"%{search}%"],
+                ["amount", "like", f"%{search}%"]
+            ]
+    page_size = int(data.get("page_size", 20))
+    limit_start = (page - 1) * page_size
+    pdcs = frappe.get_all(
+                            "Custom Pdc Details",
+                            filters=filters,
+                            or_filters=or_filters,
+                            fields=["name","document_type", "document_name", "cheque_reference_number", "cheque_date", "amount", "status", "attachment"],
+                            order_by=order_by,
+                            limit_start=limit_start,
+                            limit_page_length=page_size
+                            )
+
+    for pdc in pdcs:
+        pdc["currency"] = None
+        if pdc.document_type and pdc.document_name:
+            pdc["currency"] = frappe.db.get_value(pdc.document_type, pdc.document_name, "currency")
+
+    total_count = frappe.db.count("Custom Pdc Details", filters=filters)
+
+    return {
+            "data": pdcs,
+            "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total": total_count,
+                    "total_pages": max(1, (total_count + page_size - 1) // page_size),
+                    "has_next": page < total_count,
+                    "has_prev": page > 1
+                }
+        }
+
+def create_pdc(data):
+    validate_mandatory_fields(data)
+    validate_unique_cheque_reference_number(data.get("cheque_reference_number"))
+
+    pdc_doc = frappe.get_doc({
+                                "doctype": "Custom Pdc Details",
+                                "document_type": data.get("document_type", "Sales Invoice"),
+                                "document_name": data.get("document_name"),
+                                "cheque_reference_number": data.get("cheque_reference_number"),
+                                "cheque_date": data.get("cheque_date"),
+                                "amount": data.get("amount"),
+                                "status": data.get("status", "Unused")
+                            })
+    pdc_doc.insert()
+
+    add_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    attachment_file = frappe.local.request.files.get("attachment")
+    if attachment_file:
+        uploaded = upload_file(attachment_file, "Custom Pdc Details", pdc_doc.name, "attachment")
+        pdc_doc.attachment = uploaded.file_url
+        pdc_doc.save()
+
+    return pdc_doc.name
+
+def update_pdc(name, data):
+
+    validate_mandatory_fields(data)
+    cheque_reference_number = data.get("cheque_reference_number")
+    if cheque_reference_number:
+        validate_unique_cheque_reference_number(cheque_reference_number, exclude_name=name)
+
+    pdc_doc = frappe.get_doc("Custom Pdc Details", name)
+    remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
+    pdc_doc.document_type = data.get("document_type", pdc_doc.document_type)
+    pdc_doc.document_name = data.get("document_name", pdc_doc.document_name)
+    pdc_doc.cheque_reference_number = data.get("cheque_reference_number", pdc_doc.cheque_reference_number)
+    pdc_doc.cheque_date = data.get("cheque_date", pdc_doc.cheque_date)
+    pdc_doc.amount = data.get("amount", pdc_doc.amount)
+    pdc_doc.status = data.get("status", pdc_doc.status)
+    attachment_file = frappe.local.request.files.get("attachment")
+    if attachment_file:
+        uploaded = upload_file(attachment_file, "Custom Pdc Details", pdc_doc.name, "attachment")
+        pdc_doc.attachment = uploaded.file_url
+
+    pdc_doc.save()
+    add_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+
+def delete_pdc(name):
+    pdc_doc = frappe.get_doc("Custom Pdc Details", name)
+    remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
+    frappe.delete_doc("Custom Pdc Details", name)

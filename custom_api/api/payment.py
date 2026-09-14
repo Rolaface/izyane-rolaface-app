@@ -382,6 +382,15 @@ def create_payment_entry():
         print(json.dumps(pe.as_dict(), indent=2, default=str))
         pe.submit()
 
+        if reference_no:
+            pdc_name = frappe.db.get_value(
+                "Custom Pdc Details",
+                {"cheque_reference_number": reference_no, "status": "Unused"},
+                "name",
+            )
+            if pdc_name:
+                frappe.db.set_value("Custom Pdc Details", pdc_name, "status", "Used")
+
         return send_old_response(
             status="success",
             message="Payment entry created successfully.",
@@ -513,8 +522,8 @@ def get_all_payments():
             filters["status"] = ["in", status]
 
         # Date range filter
-        from_date = args.get("from_date")
-        to_date = args.get("to_date")
+        from_date = args.get("fromDate")
+        to_date = args.get("toDate")
         if from_date and to_date:
             filters["posting_date"] = ["between", [from_date, to_date]]
         elif from_date:
