@@ -19,7 +19,6 @@ from .utils import (
     get_lpo_tax_template,
     get_zero_rated_tax_template
 )
-
 from custom_api.api.item.utils.item_utils import _get_tax
 
 def create_sales_invoice(data):
@@ -134,7 +133,6 @@ def create_sales_invoice(data):
     terms_payload = data.get("terms")
     if terms_payload:
         sync_invoice_terms(invoice, terms_payload)
-
     return invoice
 
 def update_sales_invoice_customer(invoice, customer_id):
@@ -349,7 +347,8 @@ def get_sales_invoice_by_id(invoice_id, is_credit_note=False, is_sales_debit_not
         "remarks": invoice.remarks,
         "additional_discount_percentage": invoice.additional_discount_percentage,
         "discount_amount": invoice.discount_amount,
-        "lpoNumber":invoice.po_no
+        "lpoNumber":invoice.po_no,
+        "tags": invoice._user_tags
     }
 
     payment_mode = custom_details[0].payment_mode if custom_details else None
@@ -567,6 +566,7 @@ def get_sales_invoices(filters=None, page=1, page_size=20, search=None):
             "cost_center",
             "status",
             "debit_to",
+            "_user_tags as tags"
         ],
         limit_start=start,
         limit_page_length=page_size,

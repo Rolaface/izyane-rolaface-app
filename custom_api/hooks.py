@@ -270,7 +270,8 @@ override_whitelisted_methods = {
 
 scheduler_events = {
         "daily": [
-            "custom_api.schedulars.customer_payment_reminder.tasks.send_overdue_payment_reminders"
+            "custom_api.schedulars.customer_payment_reminder.tasks.send_overdue_payment_reminders",
+            "custom_api.schedulars.pdc_reminder.tasks.send_pdc_reminders"
         ]
     }
 
