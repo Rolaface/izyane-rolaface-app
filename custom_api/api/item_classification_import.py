@@ -17,10 +17,6 @@ from frappe.utils import cint, now
 
 @frappe.whitelist()
 def import_item_classification():
-    """
-    POST endpoint. Send the CSV as multipart/form-data under key 'file'.
-    Returns a job_id immediately; actual import happens in background.
-    """
     uploaded_file = frappe.request.files.get("file")
     if not uploaded_file:
         frappe.throw("No file provided. Send it under form-data key 'file'.")
@@ -43,12 +39,13 @@ def import_item_classification():
         job_id=job_id,
         file_url=file_doc.file_url,
         user=frappe.session.user,
+        import_job_id=job_id,
     )
 
     return {"job_id": job_id, "message": "Import started"}
 
 
-def run_import(file_url, user):
+def run_import(file_url, user, import_job_id=None):
     file_doc = frappe.get_doc("File", {"file_url": file_url})
     file_path = file_doc.get_full_path()
 
@@ -58,15 +55,12 @@ def run_import(file_url, user):
 
     total = len(rows)
     if total == 0:
-        _notify(user, 100, 0, 0, ["File is empty"], done=True)
+        _notify(user, 100, 0, 0, ["File is empty"], done=True, job_id=import_job_id)
         return
 
-    # fresh import every run: wipe existing data first
     frappe.db.truncate("Custom Item Classification")
     frappe.db.commit()
 
-    # still guard against duplicate codes appearing twice WITHIN the same
-    # CSV (table itself is empty right after truncate)
     existing_codes = set()
 
     BATCH_SIZE = 500
@@ -92,7 +86,7 @@ def run_import(file_url, user):
 
         ts = now()
         batch.append({
-            "name": code,              # class_code is unique anyway, use it as docname
+            "name": code,
             "class_code": code,
             "class_name": name,
             "class_level": level,
@@ -117,8 +111,6 @@ def run_import(file_url, user):
                 inserted += len(batch)
                 frappe.db.commit()
             except Exception:
-                # fall back to row-by-row for this batch so one bad row
-                # doesn't kill the whole batch
                 for v in batch:
                     try:
                         frappe.db.sql(
@@ -138,20 +130,34 @@ def run_import(file_url, user):
 
             batch = []
             pct = int((i / total) * 100)
-            _notify(user, pct, inserted, skipped, errors[-5:])
+            _notify(user, pct, inserted, skipped, errors[-5:], job_id=import_job_id)
 
-    _notify(user, 100, inserted, skipped, errors, done=True)
+    _notify(user, 100, inserted, skipped, errors, done=True, job_id=import_job_id)
 
 
-def _notify(user, pct, inserted, skipped, errors, done=False):
+def _notify(user, pct, inserted, skipped, errors, done=False, job_id=None):
+    msg = {
+        "progress": pct,
+        "inserted": inserted,
+        "skipped": skipped,
+        "recent_errors": errors,
+        "done": done,
+    }
+    
+    if job_id:
+        frappe.cache().set_value(f"item_classification_import_progress_{job_id}", msg, expires_in_sec=3600)
+
     frappe.publish_realtime(
         event="item_classification_import_progress",
-        message={
-            "progress": pct,
-            "inserted": inserted,
-            "skipped": skipped,
-            "recent_errors": errors,
-            "done": done,
-        },
+        message=msg,
         user=user,
     )
+
+
+@frappe.whitelist()
+def get_import_progress(job_id):
+    msg = frappe.cache().get_value(f"item_classification_import_progress_{job_id}")
+    if not msg:
+        return {"progress": 0, "inserted": 0, "skipped": 0, "recent_errors": [], "done": False, "not_found": True}
+    return msg
+
