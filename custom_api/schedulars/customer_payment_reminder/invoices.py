@@ -2,9 +2,22 @@ import frappe
 
 def get_overdue_invoices_grouped_by_customer():
 
+    pdc_invoice_names = frappe.get_all(
+        "Tag Link",
+        filters={"document_type": "Sales Invoice", "tag": "PDC"},
+        pluck="document_name",
+    )
+
+    filters = {
+        "docstatus": 1,
+        "status": ["in", ["Overdue", "Partly Paid", "unpaid"]],
+    }
+    if pdc_invoice_names:
+        filters["name"] = ["not in", pdc_invoice_names]
+
     total_overdue_invoices = frappe.db.count(
         "Sales Invoice",
-        filters={"status": ["in", ["Overdue"]]},
+        filters={**filters, "status": ["in", ["Overdue"]]},
     )
 
     if total_overdue_invoices == 0:
@@ -13,10 +26,7 @@ def get_overdue_invoices_grouped_by_customer():
 
     invoices = frappe.get_all(
         "Sales Invoice",
-        filters={
-            "docstatus": 1,
-            "status": ["in", ["Overdue", "Partly Paid", "unpaid"]],
-        },
+        filters=filters,
         fields=[
             "name",
             "customer",
