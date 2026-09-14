@@ -37,3 +37,20 @@ def get_due_pdcs_grouped_by_contact_email():
         email_map[contact_email].append(pdc)
 
     return email_map
+
+def expire_overdue_pdcs():
+    today = frappe.utils.today()
+
+    overdue_names = frappe.get_all(
+        "Custom Pdc Details",
+        filters={
+            "status": "Unused",
+            "cheque_date": ["<", today],
+        },
+        pluck="name",
+    )
+
+    for name in overdue_names:
+        frappe.db.set_value("Custom Pdc Details", name, "status", "Expired")
+
+    return overdue_names
