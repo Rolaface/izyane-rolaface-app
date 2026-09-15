@@ -4,6 +4,7 @@ import frappe
 from erpnext.setup.utils import get_exchange_rate
 from custom_api.utils.response import send_response
 from frappe.desk.search import search_widget
+from frappe.desk.doctype.tag.tag import remove_tag
 
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_ledger_account():
@@ -378,18 +379,20 @@ def create_payment_entry():
             build_deduction(deductions, pe)
 
         pe.insert(ignore_permissions=True)
-        import json
-        print(json.dumps(pe.as_dict(), indent=2, default=str))
+
         pe.submit()
 
         if reference_no:
-            pdc_name = frappe.db.get_value(
+            pdc = frappe.db.get_value(
                 "Custom Pdc Details",
                 {"cheque_reference_number": reference_no, "status": "Unused"},
-                "name",
+                ["name", "document_type", "document_name"],
+                as_dict=True,
             )
-            if pdc_name:
-                frappe.db.set_value("Custom Pdc Details", pdc_name, "status", "Used")
+            if pdc:
+                frappe.db.set_value("Custom Pdc Details", pdc.name, "status", "Used")
+                if pdc.document_type and pdc.document_name:
+                    remove_tag("PDC", pdc.document_type, pdc.document_name)
 
         return send_old_response(
             status="success",
