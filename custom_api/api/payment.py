@@ -2,6 +2,7 @@ from custom_api.permission import require_permission
 from custom_api.utils.response import send_old_response, send_response_list
 import frappe
 from erpnext.setup.utils import get_exchange_rate
+from frappe.utils import flt
 from custom_api.utils.response import send_response
 from frappe.desk.search import search_widget
 from frappe.desk.doctype.tag.tag import remove_tag
@@ -108,6 +109,11 @@ def resolve_party_name(party_type, party_id):
 
 
 def build_references(references, pe):
+
+    reference_exchange_rate = (
+        pe.source_exchange_rate if pe.payment_type == "Receive" else pe.target_exchange_rate
+    )
+
     for ref in references:
         reference_doctype = ref.get("reference_doctype")
         reference_name    = ref.get("reference_name")
@@ -125,8 +131,12 @@ def build_references(references, pe):
         
         elif reference_doctype == "Expense Claim":
             claim = frappe.get_doc("Expense Claim", reference_name)
-            total_amount = claim.grand_total
-            outstanding = claim.grand_total - claim.total_amount_reimbursed
+            precision = frappe.get_precision("Expense Claim", "grand_total")
+
+            total_amount = flt(
+                claim.total_sanctioned_amount + claim.total_taxes_and_charges, precision
+            )
+            outstanding = flt(claim.grand_total - claim.total_amount_reimbursed, precision)
 
         elif reference_doctype == "Employee Advance":
             advance = frappe.get_doc("Employee Advance", reference_name)
@@ -152,7 +162,7 @@ def build_references(references, pe):
             "total_amount":       total_amount,
             "outstanding_amount": outstanding,
             "allocated_amount":   allocated_amount,
-            "exchange_rate":      get_exchange_rate(from_currency=pe.paid_from_account_currency, to_currency=pe.company_currency, transaction_date=pe.posting_date)
+            "exchange_rate":      reference_exchange_rate
         })
 
 
