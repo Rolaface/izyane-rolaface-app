@@ -11,7 +11,6 @@ from custom_api.api.payment.utils import (
     build_references,
     build_taxes,
     get_required_field_labels,
-    mark_reference_pdc_used,
     resolve_exchange_rates,
     resolve_party_name,
     validate_required,
@@ -187,8 +186,6 @@ def create_payment_entry_service(data):
     apply_payment_entry_fields(pe, resolved)
     pe.insert(ignore_permissions=True)
 
-    mark_reference_pdc_used(resolved["reference_no"])
-
     return build_payment_entry_response(pe)
 
 def update_payment_entry_service(payment_id, data):
@@ -202,8 +199,6 @@ def update_payment_entry_service(payment_id, data):
     resolved = validate_and_resolve_payment_entry(data)
     apply_payment_entry_fields(pe, resolved)
     pe.save(ignore_permissions=True)
-
-    mark_reference_pdc_used(resolved["reference_no"])
 
     return build_payment_entry_response(pe)
 

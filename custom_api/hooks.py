@@ -249,6 +249,9 @@ doc_events = {
     "Journal Entry": {
         "validate": "custom_api.api.accounting.journal_entry.before_validate_hooks.before_validate"
         },
+    "Payment Entry": {
+        "on_submit": "custom_api.api.payment.on_submit_hooks.on_submit"
+        },
     "Sales Invoice": {
         # "before_insert": "custom_api.api.selling.sales_invoice.before_insert_hooks.before_insert",
         "before_naming": "custom_api.api.selling.sales_invoice.naming_series_hooks.before_naming",
