@@ -6,7 +6,7 @@ ALLOWED_FIELDS = frozenset({
 
 SORT_FIELDS = frozenset({
     "name", "creation", "modified", "posting_date", "grand_total",
-    "outstanding_amount", "customer_name",
+    "outstanding_amount", "customer_name", "return_against"
 })
 
 LIST_FIELDS = [
