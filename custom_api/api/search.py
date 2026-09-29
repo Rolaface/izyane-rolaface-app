@@ -514,7 +514,7 @@ def get_party_details(party_type, party, cost_center=None):
     if party_type == "Customer":
         invoices = frappe.get_all(
             "Sales Invoice",
-            filters={"customer": party, "docstatus": 1},
+            filters={"customer": party, "docstatus": 1, "is_return": 0, "is_debit_note": 0},
             fields=["outstanding_amount"]
         )
         total_outstanding = sum(inv.get("outstanding_amount", 0) or 0 for inv in invoices)
@@ -522,7 +522,7 @@ def get_party_details(party_type, party, cost_center=None):
     elif party_type == "Supplier":
         invoices = frappe.get_all(
             "Purchase Invoice",
-            filters={"supplier": party, "docstatus": 1},
+            filters={"supplier": party, "docstatus": 1, "is_return": 0},
             fields=["outstanding_amount"]
         )
         total_outstanding = sum(inv.get("outstanding_amount", 0) or 0 for inv in invoices)
