@@ -23,7 +23,7 @@ def create_customer(data):
         "tax_id": data.get("tpin"),
         "tax_category": data.get("customerTaxCategory"),
         "default_currency": data.get("currency"),
-        "customer_group": data.get("customerGroup", "All Customer Groups"),
+        "customer_group": data.get("customerGroup", None),
         "disabled": 0,
     }
     if data.get("naming_series"):
