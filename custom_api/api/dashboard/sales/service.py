@@ -7,12 +7,14 @@ def get_sales_dashboard_data(year=None, order_by=None):
     company = frappe.defaults.get_user_default("Company") or frappe.get_default("Company")
     year = cint(year) or getdate(nowdate()).year
     currency = frappe.db.get_value("Company", company, "default_currency")
+    monthly_overview = get_monthly_sales_overview(company, year)
 
     return {
         "currency": currency,
         "period": {"year": year, "granularity": "monthly"},
         "summary": get_document_counts(company),
-        "monthly_sales_overview": get_monthly_sales_overview(company, year),
+        "monthly_sales_overview": monthly_overview,
+        "monthly_sales_year_total": get_monthly_year_total(monthly_overview), 
         "quotation_conversion": get_quotation_conversion(company, year),
         "customer_concentration": get_customer_concentration(company, year),
         "needs_attention": get_needs_attention(company),
@@ -98,6 +100,9 @@ def get_monthly_sales_overview(company, year):
         data[month_idx]["received"] += received
         data[month_idx]["receivable"] += receivable
 
+    for row in data:
+        row["total"] = row["received"] + row["receivable"]
+
     return data
 
 
@@ -129,6 +134,14 @@ def get_quotation_conversion(company, year):
         "conversion_rate_percent": round((converted / total) * 100) if total else 0,
     }
 
+def get_monthly_year_total(monthly_data):
+    received = sum(r["received"] for r in monthly_data)
+    receivable = sum(r["receivable"] for r in monthly_data)
+    return {
+        "received": received,
+        "receivable": receivable,
+        "total": received + receivable,
+    }
 
 def get_customer_concentration(company, year):
     rows = frappe.db.sql(
@@ -158,7 +171,7 @@ def get_customer_concentration(company, year):
     }
 
 
-def get_needs_attention(company, inactive_days=60):
+def get_needs_attention(company, inactive_days=60, limit=10):
     rows = frappe.db.sql(
         """
         SELECT customer AS customer_id, customer_name, MAX(posting_date) AS last_order_date
@@ -184,7 +197,7 @@ def get_needs_attention(company, inactive_days=60):
             })
 
     result.sort(key=lambda x: x["last_order_days_ago"], reverse=True)
-    return result[:10]
+    return result[:limit] if limit else result
 
 
 ACTION_PRIORITY = {
@@ -222,7 +235,7 @@ def get_action_items(company, inactive_days=60, quotation_expiry_days=7, high_ou
     if overdue_count:
         items.append(_build_action_item("overdue_invoices", overdue_count, f"{overdue_count} invoice(s) overdue"))
 
-    inactive_customers = get_needs_attention(company, inactive_days=inactive_days)
+    inactive_customers = get_needs_attention(company, inactive_days=inactive_days, limit=None)
     if inactive_customers:
         items.append(_build_action_item(
             "inactive_customers",
