@@ -218,6 +218,7 @@ def get_customers(page, page_size, search=None, status=None):
             "default_currency",
             "tax_category",
             "disabled",
+            "website",
         ],
         limit_start=start,
         limit_page_length=page_size,
