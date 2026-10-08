@@ -25,6 +25,7 @@ def create_customer(data):
         "default_currency": data.get("currency"),
         "customer_group": data.get("customerGroup", None),
         "disabled": 0,
+        "website": data.get("website", None),
     }
     if data.get("naming_series"):
         doc_args["naming_series"] = data.get("naming_series")
@@ -85,7 +86,7 @@ def update_customer(customer_id, data):
     for k, v in field_map.items():
         if data.get(k) is not None:
             setattr(customer, v, data.get(k))
-
+    customer.website = data.get("website", None)
     if data.get("status"):
         raw_status = data.get("status")
         status = str(raw_status).strip().lower()
@@ -172,7 +173,7 @@ def get_customer_by_id(customer_id):
         "addresses": get_linked_addresses("Customer", customer_id),
         "terms": get_linked_terms(customer_id, "selling"),
         "principalId": principal_id,
-
+        "website": customer.website,
     }
 
 
