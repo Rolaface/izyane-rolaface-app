@@ -27,6 +27,7 @@ def get_batch_wise_stock_report(
     company_currency = frappe.defaults.get_user_default("Currency")
     get_service_item = int(get_service_item)
     get_product_item = int(get_product_item)
+    search_codes = None
     # ── Step 1: Build SQL conditions ──────────────────────────────────────────
     conditions = [
         f"company = {frappe.db.escape(company)}",
@@ -50,6 +51,7 @@ def get_batch_wise_stock_report(
         """, {"like": like}, as_dict=True)
 
         matched_codes = [r["item_code"] for r in matched]
+        search_codes = matched_codes
 
         if not matched_codes:
             return _empty(page, page_size)
@@ -167,7 +169,7 @@ def get_batch_wise_stock_report(
                     if item_details_map.get(r["item_code"], {}).get("item_group") == item_group
                 ]
 
-            if not movement_rows:
+            if not movement_rows and not get_service_item:
                 return _empty(page, page_size)
 
             # ── Step 5: Fetch REAL batch movements from Serial and Batch Bundle ───────
@@ -611,13 +613,17 @@ def get_batch_wise_stock_report(
                     }
     if get_service_item:
         # ── Step 6b: Append non-stock items (maintain_stock=0, for sale) ─────────
+        service_filters = {
+            "is_stock_item":  0,
+            "is_sales_item":  1,
+            "disabled":       0,
+        }
+        if item_code: service_filters["item_code"] = item_code
+        if item_group: service_filters["item_group"] = item_group
+        if search_codes is not None: service_filters["item_code"] = ["in", search_codes]
         non_stock_items = frappe.get_all(
             "Item",
-            filters={
-                "is_stock_item":  0,
-                "is_sales_item":  1,
-                "disabled":       0,
-            },
+            filters=service_filters,
             fields=["item_code", "item_name", "item_group", "stock_uom", "description", "name"],
             limit=0,
         )
