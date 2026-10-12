@@ -45,7 +45,8 @@ def get_warehouse_tree():
                 "is_group",
                 "lft",
                 "rgt",
-                "company"
+                "company",
+                "custom_warehouse_code"
             ],
             order_by="lft asc"
         )
