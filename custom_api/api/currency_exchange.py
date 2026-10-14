@@ -58,7 +58,7 @@ def get_currency_exchanges():
     date = _get_arg("date")
     for_buying = _get_arg("for_buying")
     for_selling = _get_arg("for_selling")
-
+    order_by = _get_arg("order_by", "date desc, name desc")
     page = int(_get_arg("page", 1))
     page_size = int(_get_arg("page_size", 100))
 
@@ -114,7 +114,7 @@ def get_currency_exchanges():
         filters=filters,
         or_filters=or_filters,
         fields=fields,
-        order_by="date desc, name desc",
+        order_by=order_by,
         limit_start=start,
         limit_page_length=page_size,
     )

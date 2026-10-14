@@ -83,7 +83,7 @@ def get_supplier_by_id(supplier_id):
         "terms": get_linked_terms(supplier_id, "buying")
     }
 
-def get_suppliers(page, page_size, search=None):
+def get_suppliers(page, page_size, search=None, order_by="creation desc"):
     start = (page - 1) * page_size
     total_suppliers = frappe.db.count("Supplier")
     total_pages = (total_suppliers + page_size - 1) // page_size
@@ -100,7 +100,7 @@ def get_suppliers(page, page_size, search=None):
         "Supplier",
         or_filters=or_filters if search else None,
         fields=["name", "supplier_name", "supplier_type", "supplier_group", "tax_id", "default_currency", "tax_category", "disabled"],
-        limit_start=start, limit_page_length=page_size, order_by="creation desc"
+        limit_start=start, limit_page_length=page_size, order_by=order_by
     )
 
     for s in suppliers:

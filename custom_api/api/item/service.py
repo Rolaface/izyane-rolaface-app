@@ -28,6 +28,7 @@ def get_items_service(params):
     current_page = int(params.get("page", 1))
     page_size = int(params.get("page_size", 10))
     search = params.get("search", "").strip()
+    order_by = params.get("order_by", "creation desc")
     or_filters = []
     if search:
         or_filters = [
@@ -63,7 +64,8 @@ def get_items_service(params):
             "is_purchase_item"
         ],
         limit_start=(current_page - 1) * page_size,
-        limit_page_length=page_size
+        limit_page_length=page_size,
+        order_by=order_by
     )
 
     total_count = frappe.db.count("Item", filters=filters)
