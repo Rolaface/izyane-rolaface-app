@@ -177,7 +177,7 @@ def get_customer_by_id(customer_id):
     }
 
 
-def get_customers(page, page_size, search=None, status=None):
+def get_customers(page, page_size, search=None, status=None, order_by="creation desc"):
     start = (page - 1) * page_size
 
     filters = {}
@@ -222,7 +222,7 @@ def get_customers(page, page_size, search=None, status=None):
         ],
         limit_start=start,
         limit_page_length=page_size,
-        order_by="creation desc",
+        order_by=order_by,
     )
 
     for c in customers:
