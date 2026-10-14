@@ -116,6 +116,7 @@ def get_all():
         page = int(args.get("page", 1))
         page_size = int(args.get("pageSize", 10))
         search = args.get("search", "").strip() or None
+        order_by = args.get("order_by", "creation desc")
 
         limit_start = (page - 1) * page_size
 
@@ -141,7 +142,7 @@ def get_all():
                 "subject",
                 "response as message",
             ],
-            order_by  = "creation desc",
+            order_by  = order_by,
             limit_start = limit_start,
             limit_page_length = page_size,
         )

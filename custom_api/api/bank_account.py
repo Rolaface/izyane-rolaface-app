@@ -95,7 +95,8 @@ def get():
     search     = frappe.request.args.get("search", "")
     page       = int(frappe.request.args.get("page", 1))
     page_size  = int(frappe.request.args.get("page_size", 10))
-    
+    order_by   = frappe.request.args.get("order_by", "creation desc")
+
     filters = {}
     if company:
         filters = {"company": frappe.defaults.get_user_default("Company"), "is_company_account":1}
@@ -135,7 +136,7 @@ def get():
         filters=filters,
         or_filters=or_filters,
         fields=fields,
-        order_by="creation desc",
+        order_by=order_by,
         limit=page_size,
         limit_start=(page - 1) * page_size,
     )
