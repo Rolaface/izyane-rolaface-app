@@ -311,7 +311,7 @@ def get_sales_order_by_id(sales_order_id):
     return data
 
 
-def get_sales_orders(filters=None, page=1, page_size=20, search=None, sort_by="creation", sort_order="desc"):
+def get_sales_orders(filters=None, page=1, page_size=20, search=None):
     filters = filters or {}
 
     frappe_filters = build_sales_order_filters(filters)
@@ -329,9 +329,7 @@ def get_sales_orders(filters=None, page=1, page_size=20, search=None, sort_by="c
         ]
 
     start = (page - 1) * page_size
-
-    order_string = f"{sort_by} {sort_order}" if sort_by else "creation desc"
-
+    order_by = filters.get("order_by", "creation desc")
     sales_orders = frappe.get_all(
         "Sales Order",
         filters=frappe_filters,
@@ -352,7 +350,7 @@ def get_sales_orders(filters=None, page=1, page_size=20, search=None, sort_by="c
         ],
         limit_start=start,
         limit_page_length=page_size,
-        order_by=order_string,
+        order_by=order_by,
     )
 
     total_sales_orders = len(
