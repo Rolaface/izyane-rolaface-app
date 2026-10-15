@@ -35,6 +35,65 @@ def _get_list_arg(key):
     return [val]
 
 
+# order_by field → (getter, kind). Aliases map to the same column.
+_AMOUNT_KEYS = {"invoiced", "paid", "outstanding"}
+_SORT_FIELDS = {
+    "voucher_no": "voucher_no",
+    "customer": "customer",
+    "type": "voucher_type",
+    "total": "invoiced",
+    "paid": "paid",
+    "outstanding": "outstanding",
+    "due_date": "due_date",
+    "posting_date": "posting_date",
+    "age": "age",
+    "status": "status",
+}
+
+
+def _parse_order_by(value):
+    """Parses "field [asc|desc]" into (column, reverse). Returns None if not given."""
+    if not value or not value.strip():
+        return None
+
+    parts = value.strip().lower().split()
+    field = parts[0]
+    direction = parts[1] if len(parts) > 1 else "asc"
+
+    if field not in _SORT_FIELDS or direction not in ("asc", "desc") or len(parts) > 2:
+        frappe.throw(
+            f"Invalid order_by '{value}'. Use '<field> [asc|desc]' where field is one of: "
+            f"{', '.join(sorted(_SORT_FIELDS))}."
+        )
+
+    return _SORT_FIELDS[field], direction == "desc"
+
+
+def _sort_value(row, column):
+    if column in _AMOUNT_KEYS:
+        return _format_currency((row.get("amounts") or row).get(column))
+    if column == "age":
+        return row.get("age") or 0
+    if column == "customer":
+        value = row.get("customer") or row.get("customer_name") or row.get("party")
+    else:
+        value = row.get(column)
+    if value in (None, ""):
+        return None
+    if column in ("due_date", "posting_date"):
+        return getdate(value)
+    return str(value).lower()
+
+
+def _sort_rows(rows, column, reverse):
+    """Sorts rows by column; rows with no value always go last."""
+    keyed = [(_sort_value(r, column), r) for r in rows]
+    with_value = [kr for kr in keyed if kr[0] is not None]
+    without_value = [r for k, r in keyed if k is None]
+    with_value.sort(key=lambda kr: kr[0], reverse=reverse)
+    return [r for _, r in with_value] + without_value
+
+
 @frappe.whitelist(allow_guest=False, methods=["GET"])
 def get_accounts_receivable():
     try:
@@ -50,6 +109,16 @@ def get_accounts_receivable():
             voucher_type_filters = [
                 str(v).strip().lower() for v in voucher_type_filters
             ]
+
+        try:
+            order_by = _parse_order_by(_get_arg("order_by"))
+        except frappe.ValidationError as e:
+            return send_response(
+                status="error",
+                message=str(e),
+                status_code=400,
+                http_status=400,
+            )
 
         page = int(_get_arg("page", 1))
         page_size = int(_get_arg("page_size", 10))
@@ -82,6 +151,7 @@ def get_accounts_receivable():
             "search": search_term,
             "status": status_filter,
             "v_type": voucher_type_filters,
+            "order_by": order_by,
         }
 
         cache_key_hash = hashlib.md5(
@@ -302,6 +372,9 @@ def get_accounts_receivable():
                 for c, v in top_customers
             ],
         }
+
+        if order_by:
+            processed_rows = _sort_rows(processed_rows, *order_by)
 
         total_items = len(processed_rows)
         total_pages = math.ceil(total_items / page_size) if page_size else 1
