@@ -3,7 +3,7 @@ from frappe import _
 from custom_api.api.organization.company.service import upload_file, remove_attach
 from .utils import build_pi_filters
 from .validate import validate_mandatory_fields, validate_unique_cheque_reference_number
-from frappe.desk.doctype.tag.tag import add_tag, remove_tag
+from .tags import PdcDocTags
 
 def get_all(data):
     or_filters = []
@@ -64,7 +64,7 @@ def create_pdc(data):
                             })
     pdc_doc.insert()
 
-    add_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    PdcDocTags(pdc_doc.document_type, ignore_permissions=True).add(pdc_doc.document_name, "PDC")
     attachment_file = frappe.local.request.files.get("attachment")
     if attachment_file:
         uploaded = upload_file(attachment_file, "Custom Pdc Details", pdc_doc.name, "attachment")
@@ -81,7 +81,7 @@ def update_pdc(name, data):
         validate_unique_cheque_reference_number(cheque_reference_number, exclude_name=name)
 
     pdc_doc = frappe.get_doc("Custom Pdc Details", name)
-    remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    PdcDocTags(pdc_doc.document_type, ignore_permissions=True).remove(pdc_doc.document_name, "PDC")
     remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
     pdc_doc.document_type = data.get("document_type", pdc_doc.document_type)
     pdc_doc.document_name = data.get("document_name", pdc_doc.document_name)
@@ -95,10 +95,10 @@ def update_pdc(name, data):
         pdc_doc.attachment = uploaded.file_url
 
     pdc_doc.save()
-    add_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    PdcDocTags(pdc_doc.document_type, ignore_permissions=True).add(pdc_doc.document_name, "PDC")
 
 def delete_pdc(name):
     pdc_doc = frappe.get_doc("Custom Pdc Details", name)
-    remove_tag("PDC", pdc_doc.document_type, pdc_doc.document_name)
+    PdcDocTags(pdc_doc.document_type, ignore_permissions=True).remove(pdc_doc.document_name, "PDC")
     remove_attach("Custom Pdc Details", pdc_doc.name, "attachment")
     frappe.delete_doc("Custom Pdc Details", name)
