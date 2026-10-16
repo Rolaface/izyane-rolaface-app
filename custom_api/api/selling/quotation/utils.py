@@ -300,6 +300,9 @@ def build_quotation_filters(args):
     if args.get("company"):
         frappe_filters["company"] = args["company"]
 
+    if args.get("status"):
+        frappe_filters["status"] = ["in", args["status"]]
+
     doc_type = args.get("documentType") or args.get("document_type")
     if doc_type:
         matching_parents = frappe.get_all(
